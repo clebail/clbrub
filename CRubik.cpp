@@ -141,6 +141,7 @@ void CRubik::init(void) {
 
                     memcpy(&cubes[i].faces[j].coords, &coords[j], sizeof(float[NBSOMMET][DIMENSION]));
                     cubes[i].faces[j].color = color;
+                    cubes[i].faces[j].colorFace = face;
                     cubes[i].xc = static_cast<int>(fX);
                     cubes[i].yc = static_cast<int>(fY);;
                     cubes[i].zc = static_cast<int>(fZ);

@@ -3,6 +3,7 @@
 #define C3DVIEW_H
 //-----------------------------------------------------------------------------------------------
 #include <QGLWidget>
+#include <QOpenGLTexture>
 #include <QTimer>
 #include "CRubik.h"
 //-----------------------------------------------------------------------------------------------
@@ -22,6 +23,7 @@ private:
     float scale;
     QTimer *timer;
     float roty, rotx, rotz;
+    QOpenGLTexture *textures[NBFACE];
 
     void drawRubik(bool forceColor);
 private slots:

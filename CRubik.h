@@ -23,6 +23,7 @@ public:
     typedef struct _SFace {
         float coords[NBSOMMET][DIMENSION];
         QColor color;
+        CRubik::EFace colorFace;
     }SFace;
 
     CRubik(void);

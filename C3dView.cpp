@@ -14,6 +14,8 @@ C3dView::C3dView(QWidget *parent) : QGLWidget(parent), rubik() {
     timer->setInterval(40);
     //timer->start();
 
+    memset(textures, 0, sizeof(textures));
+
     connect(&rubik, SIGNAL(rotatestep()), this, SLOT(onRubikRotateStep()));
 }
 //-----------------------------------------------------------------------------------------------
@@ -22,6 +24,8 @@ void C3dView::initializeGL() {
     glShadeModel(GL_FLAT);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
+
+    textures[CRubik::crefOrange] = new QOpenGLTexture(QImage(":/textures/orange.png"));
 }
 //-----------------------------------------------------------------------------------------------
 void C3dView::resizeGL(int width, int height) {
@@ -77,6 +81,7 @@ void C3dView::drawRubik(bool forceColor) {
             for(x=0;x<RUBIKSIZE;x++,i++) {
                 for(j=0;j<NBFACE;j++) {
                     CRubik::SFace face = rubik.getSubFace(i, j);
+
 
                     glBegin(GL_QUADS);
                     qglColor(forceColor ? Qt::black : face.color);
