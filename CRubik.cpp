@@ -5,23 +5,36 @@
 #include <time.h>
 #include "CRubik.h"
 
-#define ROTATE_STEP             5
-#define ANGLE                   static_cast<double>(90/ROTATE_STEP)
+#define TAILLE_POPULATION                   100
+#define TAILLE_GENOME                       50
 
 CRubik::CRubik(void) {
     init();
+}
+
+CRubik::CRubik(const QList<SMouvement>& mouvements) {
+    int i;
+
+    CRubik();
+
+    for(i=0;i<mouvements.size();i++) {
+        SMouvement mouvement = mouvements.at(i);
+        rotate(mouvement.groupe, mouvement.sens, mouvement.inverse, 1, 0);
+    }
 }
 
 const CRubik::SFace& CRubik::getSubFace(int idCube, int idFace) const {
     return cubes[idCube].faces[idFace];
 }
 
-void CRubik::rotate(int idRotateGroupe, ERotate rotateSens, int ts) {
+void CRubik::rotate(int idRotateGroupe, CRubik::ERotate rotateSens, bool inverse, int stepCount, unsigned int ts) {
     int step;
-    float c = static_cast<float>(cos(ANGLE * M_PI / 180));
-    float s = static_cast<float>(sin(ANGLE * M_PI / 180));
+    int coef = (inverse ? -1 : 1);
+    double angle = static_cast<double>(90/stepCount) * coef;
+    float c = static_cast<float>(cos(angle * M_PI / 180));
+    float s = static_cast<float>(sin(angle * M_PI / 180));
 
-    for(step=0;step<ROTATE_STEP;step++) {
+    for(step=0;step<stepCount;step++) {
         int i;
 
         for(i=0;i<NBCUBEPARFACE;i++) {
@@ -36,16 +49,16 @@ void CRubik::rotate(int idRotateGroupe, ERotate rotateSens, int ts) {
 
                     switch(rotateSens) {
                     case CRubik::crrsX:
-                        cube->yc = static_cast<int>(zc);
-                        cube->zc = static_cast<int>(-yc);
+                        cube->yc = static_cast<int>(zc * coef);
+                        cube->zc = static_cast<int>(-yc * coef);
                         break;
                     case CRubik::crrsY:
-                        cube->xc = static_cast<int>(zc);
-                        cube->zc = static_cast<int>(-xc);
+                        cube->xc = static_cast<int>(zc * coef);
+                        cube->zc = static_cast<int>(-xc * coef);
                         break;
                     case CRubik::crrsZ:
-                        cube->xc = static_cast<int>(-yc);
-                        cube->yc = static_cast<int>(xc);
+                        cube->xc = static_cast<int>(-yc * coef);
+                        cube->yc = static_cast<int>(xc * coef);
                         break;
                     }
                 }
@@ -78,27 +91,77 @@ void CRubik::rotate(int idRotateGroupe, ERotate rotateSens, int ts) {
             }
         }
 
-        usleep(ts);
-        emit(rotatestep());
+        if(ts != 0) {
+            QThread::currentThread()->msleep(ts);
+            emit(rotatestep());
+        }
     }
 
     calculGroupes();
 }
 
 void CRubik::melange(void) {
-    srand(time(nullptr));
+    srand(static_cast<unsigned int>(time(nullptr)));
+    mouvements.clear();
 
     for(int i=0;i<50;i++) {
-        int sens = rand() % 3;
-        int face = rand() % RUBIKSIZE;
+        mouvements.append(createMouvement());
+    }
 
-        if(sens == 0) {
-            rotate(face, CRubik::crrsX, 20000);
-        } else if(sens == 1) {
-            rotate(face + RUBIKSIZE, CRubik::crrsY, 20000);
-        } else if(sens == 2) {
-            rotate(face + 2 * RUBIKSIZE, CRubik::crrsZ, 20000);
+    start();
+}
+
+int CRubik::getScore(void) const {
+    int x, y, z, i, j;
+    int score = 0;
+
+    for(z=i=0;z<RUBIKSIZE;z++) {
+        for(y=0;y<RUBIKSIZE;y++) {
+            for(x=0;x<RUBIKSIZE;x++,i++) {
+                for(j=0;j<NBFACE;j++) {
+                    const SCube *cube = &cubes[i];
+                    int xc = x - MARGIN;
+                    int yc = y - MARGIN;
+                    int zc = z - MARGIN;
+
+                    score += (xc != cube->xc ? 1 : 0);
+                    score += (yc != cube->yc ? 1 : 0);
+                    score += (zc != cube->zc ? 1 : 0);
+                }
+            }
         }
+    }
+
+    return score;
+}
+
+QList<CRubik::SMouvement> CRubik::solve(void) {
+    QList<CRubik::SMouvement> mouvements;
+    CRubik *population[TAILLE_POPULATION];
+    int i, j;
+
+    //Initialisation de la population
+    for(i=0;i<TAILLE_POPULATION;i++) {
+        population[i] = new CRubik(this->mouvements);
+
+        for(j=0;j<TAILLE_GENOME;j++) {
+            CRubik::SMouvement mouvement = createMouvement();
+
+            population[i]->mouvements.append(mouvement);
+            population[i]->rotate(mouvement.groupe, mouvement.sens,mouvement.inverse, 1, 0);
+        }
+    }
+
+    for(i=0;i<TAILLE_POPULATION;i++) {
+        delete population[i];
+    }
+
+    return mouvements;
+}
+
+void CRubik::run(void) {
+    for(int i=0;i<mouvements.size();i++) {
+        rotate(mouvements.at(i).groupe, mouvements.at(i).sens, mouvements.at(i).inverse, ROTATE_STEP, 20);
     }
 }
 
@@ -108,42 +171,40 @@ void CRubik::init(void) {
     for(z=i=0;z<RUBIKSIZE;z++) {
         for(y=0;y<RUBIKSIZE;y++) {
             for(x=0;x<RUBIKSIZE;x++,i++) {
-                float fX = static_cast<float>(x-MARGIN);
-                float fY = static_cast<float>(y-MARGIN);
-                float fZ = static_cast<float>(z-MARGIN);
+                float fX = static_cast<float>(x - MARGIN);
+                float fY = static_cast<float>(y - MARGIN);
+                float fZ = static_cast<float>(z - MARGIN);
 
                 float coords[NBFACE][NBSOMMET][DIMENSION] = {
-                    { { fX+UNIT, fY-UNIT, fZ+UNIT }, { fX+UNIT, fY-UNIT, fZ-UNIT }, { fX+UNIT, fY+UNIT, fZ-UNIT }, { fX+UNIT, fY+UNIT, fZ+UNIT } },
-                    { { fX-UNIT, fY-UNIT, fZ-UNIT }, { fX-UNIT, fY-UNIT, fZ+UNIT }, { fX-UNIT, fY+UNIT, fZ+UNIT }, { fX-UNIT, fY+UNIT, fZ-UNIT } },
-                    { { fX+UNIT, fY-UNIT, fZ-UNIT }, { fX-UNIT, fY-UNIT, fZ-UNIT }, { fX-UNIT, fY+UNIT, fZ-UNIT }, { fX+UNIT, fY+UNIT, fZ-UNIT } },
-                    { { fX-UNIT, fY-UNIT, fZ+UNIT }, { fX+UNIT, fY-UNIT, fZ+UNIT }, { fX+UNIT, fY+UNIT, fZ+UNIT }, { fX-UNIT, fY+UNIT, fZ+UNIT } },
-                    { { fX-UNIT, fY-UNIT, fZ-UNIT }, { fX+UNIT, fY-UNIT, fZ-UNIT }, { fX+UNIT, fY-UNIT, fZ+UNIT }, { fX-UNIT, fY-UNIT, fZ+UNIT } },
-                    { { fX-UNIT, fY+UNIT, fZ+UNIT }, { fX+UNIT, fY+UNIT, fZ+UNIT }, { fX+UNIT, fY+UNIT, fZ-UNIT }, { fX-UNIT, fY+UNIT, fZ-UNIT } }
+                    { { fX-UNIT, fY-UNIT, fZ-UNIT }, { fX-UNIT, fY-UNIT, fZ+UNIT }, { fX-UNIT, fY+UNIT, fZ+UNIT }, { fX-UNIT, fY+UNIT, fZ-UNIT } }, //gauche
+                    { { fX+UNIT, fY-UNIT, fZ+UNIT }, { fX+UNIT, fY-UNIT, fZ-UNIT }, { fX+UNIT, fY+UNIT, fZ-UNIT }, { fX+UNIT, fY+UNIT, fZ+UNIT } }, //droite
+                    { { fX+UNIT, fY-UNIT, fZ-UNIT }, { fX-UNIT, fY-UNIT, fZ-UNIT }, { fX-UNIT, fY+UNIT, fZ-UNIT }, { fX+UNIT, fY+UNIT, fZ-UNIT } }, //derrière
+                    { { fX-UNIT, fY-UNIT, fZ+UNIT }, { fX+UNIT, fY-UNIT, fZ+UNIT }, { fX+UNIT, fY+UNIT, fZ+UNIT }, { fX-UNIT, fY+UNIT, fZ+UNIT } }, //devant
+                    { { fX-UNIT, fY-UNIT, fZ-UNIT }, { fX+UNIT, fY-UNIT, fZ-UNIT }, { fX+UNIT, fY-UNIT, fZ+UNIT }, { fX-UNIT, fY-UNIT, fZ+UNIT } }, //bas
+                    { { fX-UNIT, fY+UNIT, fZ+UNIT }, { fX+UNIT, fY+UNIT, fZ+UNIT }, { fX+UNIT, fY+UNIT, fZ-UNIT }, { fX-UNIT, fY+UNIT, fZ-UNIT } }  //haut
                 };
 
                 for(j=0;j<NBFACE;j++) {
-                    QColor color = Qt::black;
                     CRubik::EFace face = static_cast<CRubik::EFace>(j);
 
-                    if(x == 0 && face == crefOrange) {
-                        color = QColor(0xff, 0x58, 0);
-                    } else if(x == RUBIKSIZE - 1 && face == crefRouge) {
-                        color = QColor(0xb7, 0x12, 0x34);
-                    } else if(y == 0 && face == crefJaune) {
-                        color = QColor(0xff, 0xd5, 0);
-                    } else if(y == RUBIKSIZE - 1 && face == crefBlanc) {
-                        color = Qt::white;
-                    } else if(z == 0 && face == crefBlue) {
-                       color = QColor(0, 0x46, 0xad);
-                    } else if(z == RUBIKSIZE - 1 && face == crefVert) {
-                        color = QColor(0, 0x9b, 0x48);
+                    memcpy(&cubes[i].faces[j].coords, &coords[j], sizeof(float[NBSOMMET][DIMENSION]));
+
+                    cubes[i].faces[j].colorFace = CRubik::crefBlack;
+                    if((x == 0 && j == 0) || (x == RUBIKSIZE -1 && j == 1)) {
+                        cubes[i].faces[j].colorFace = face;
                     }
 
-                    memcpy(&cubes[i].faces[j].coords, &coords[j], sizeof(float[NBSOMMET][DIMENSION]));
-                    cubes[i].faces[j].color = color;
-                    cubes[i].faces[j].colorFace = face;
+                    if((z == 0 && j == 2) || (z == RUBIKSIZE -1 && j == 3)) {
+                        cubes[i].faces[j].colorFace = face;
+                    }
+
+                    if((y == 0 && j == 4) || (y == RUBIKSIZE -1 && j == 5)) {
+                        cubes[i].faces[j].colorFace = face;
+                    }
+
+                    cubes[i].faces[j].clb = (cubes[i].faces[j].colorFace == CRubik::crefBlanc && x == 1 && y == 2 && z == 1);
                     cubes[i].xc = static_cast<int>(fX);
-                    cubes[i].yc = static_cast<int>(fY);;
+                    cubes[i].yc = static_cast<int>(fY);
                     cubes[i].zc = static_cast<int>(fZ);
                 }
             }
@@ -159,19 +220,44 @@ void CRubik::calculGroupes(void) {
     SCube **groupey;
     SCube **groupez;
 
-    memset(rGroupes, 0, sizeof(SCube *)*NBFACE*NBCUBEPARFACE);
+    memset(rGroupes, 0, sizeof(SCube *) * NBFACE * NBCUBEPARFACE);
 
     for(i=0;i<NBCUBE;i++) {
-        int x = cubes[i].xc+MARGIN;
-        int y = cubes[i].yc+MARGIN;
-        int z = cubes[i].zc+MARGIN;
+        int x = cubes[i].xc + MARGIN;
+        int y = cubes[i].yc + MARGIN;
+        int z = cubes[i].zc + MARGIN;
 
         groupex = rGroupes[x];
         groupey = rGroupes[y + RUBIKSIZE];
         groupez = rGroupes[z + 2 * RUBIKSIZE];
 
-        groupex[z*RUBIKSIZE+y] = &cubes[i];
-        groupey[z*RUBIKSIZE+x] = &cubes[i];
-        groupez[y*RUBIKSIZE+x] = &cubes[i];
+        groupex[z * RUBIKSIZE + y] = &cubes[i];
+        groupey[z * RUBIKSIZE + x] = &cubes[i];
+        groupez[y * RUBIKSIZE + x] = &cubes[i];
     }
 }
+
+CRubik::SMouvement CRubik::createMouvement(void) {
+    int sens = rand() % 3;
+    int face = rand() % RUBIKSIZE;
+    CRubik::SMouvement mouvement;
+
+    mouvement.groupe = face + sens * RUBIKSIZE;
+    mouvement.sens = static_cast<CRubik::ERotate>(sens);
+    mouvement.inverse = rand() % 2 == 1;
+
+    mouvements.append(mouvement);
+
+    return mouvement;
+}
+
+CRubik::SMouvement::operator QString(void) const {
+    QString result = "";
+
+    result += QString::number(groupe).rightJustified(MVTPAD, '0');
+    result += (sens == CRubik::crrsX ? "X" : (sens == CRubik::crrsY ? "Y" : "Z"));
+    result += (inverse ? "1" : "0");
+
+    return result;
+}
+

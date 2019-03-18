@@ -14,9 +14,14 @@ C3dView::C3dView(QWidget *parent) : QGLWidget(parent), rubik() {
     timer->setInterval(40);
     //timer->start();
 
-    memset(textures, 0, sizeof(GLuint) * NBFACE);
+    memset(textures, 0, sizeof(GLuint) * (NBFACE + 1));
 
-    connect(&rubik, SIGNAL(rotatestep()), this, SLOT(onRubikRotateStep()));
+    rubik = new CRubik();
+    connect(rubik, SIGNAL(rotatestep()), this, SLOT(onRubikRotateStep()));
+}
+//-----------------------------------------------------------------------------------------------
+C3dView::~C3dView(void) {
+    rubik->deleteLater();
 }
 //-----------------------------------------------------------------------------------------------
 void C3dView::initializeGL() {
@@ -25,12 +30,13 @@ void C3dView::initializeGL() {
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
 
-    loadTexture(CRubik::crefBlue, ":/textures/bleu.png", &textures[CRubik::crefBlue]);
-    loadTexture(CRubik::crefVert, ":/textures/vert.png", &textures[CRubik::crefVert]);
-    loadTexture(CRubik::crefBlanc, ":/textures/blanc.png", &textures[CRubik::crefBlanc]);
-    loadTexture(CRubik::crefJaune, ":/textures/jaune.png", &textures[CRubik::crefJaune]);
-    loadTexture(CRubik::crefRouge, ":/textures/rouge.png", &textures[CRubik::crefRouge]);
-    loadTexture(CRubik::crefOrange, ":/textures/orange.png", &textures[CRubik::crefOrange]);
+    loadTexture(":/textures/bleu.png", &textures[CRubik::crefBlue]);
+    loadTexture(":/textures/vert.png", &textures[CRubik::crefVert]);
+    loadTexture(":/textures/blanc.png", &textures[CRubik::crefBlanc]);
+    loadTexture(":/textures/jaune.png", &textures[CRubik::crefJaune]);
+    loadTexture(":/textures/rouge.png", &textures[CRubik::crefRouge]);
+    loadTexture(":/textures/orange.png", &textures[CRubik::crefOrange]);
+    loadTexture(":/textures/blancClb.png", &textures[NBFACE]);
 }
 //-----------------------------------------------------------------------------------------------
 void C3dView::resizeGL(int width, int height) {
@@ -65,12 +71,16 @@ void C3dView::paintGL() {
     drawRubik(false);
 }
 //-----------------------------------------------------------------------------------------------
-void C3dView::rotate(int idRotateGroupe, CRubik::ERotate rotateSens) {
-    rubik.rotate(idRotateGroupe, rotateSens);
+void C3dView::rotate(int idRotateGroupe, CRubik::ERotate rotateSens, bool inverse) {
+    rubik->rotate(idRotateGroupe, rotateSens, inverse);
 }
 //-----------------------------------------------------------------------------------------------
 void C3dView::melange(void) {
-    rubik.melange();
+    rubik->melange();
+}
+//-----------------------------------------------------------------------------------------------
+void C3dView::solve(void) {
+    rubik->solve();
 }
 //-----------------------------------------------------------------------------------------------
 void C3dView::wheelEvent(QWheelEvent * event) {
@@ -85,26 +95,29 @@ void C3dView::drawRubik(bool forceColor) {
         for(y=0;y<RUBIKSIZE;y++) {
             for(x=0;x<RUBIKSIZE;x++,i++) {
                 for(j=0;j<NBFACE;j++) {
-                    CRubik::SFace face = rubik.getSubFace(i, j);
+                    CRubik::SFace face = rubik->getSubFace(i, j);
 
-                    if(forceColor) {
+                    if(forceColor && face.colorFace == CRubik::crefBlack) {
                         qglColor(Qt::black);
-                    }else if(textures[face.colorFace] != 0) {
+                    } else {
+                        GLuint texture = textures[face.colorFace];
                         glEnable(GL_TEXTURE_2D);
-                        glBindTexture(GL_TEXTURE_2D, textures[face.colorFace]);
-                    }else {
-                        qglColor(face.color);
+
+                        if(face.clb) {
+                            texture = textures[NBFACE];
+                        }
+                        glBindTexture(GL_TEXTURE_2D, texture);
                     }
 
                     glBegin(GL_QUADS);
 
-                    glTexCoord2d(1, 1);
-                    glVertex3f(face.coords[0][0], face.coords[0][1], face.coords[0][2]);
-                    glTexCoord2d(1, 0);
-                    glVertex3f(face.coords[1][0], face.coords[1][1], face.coords[1][2]);
-                    glTexCoord2d(0, 0);
-                    glVertex3f(face.coords[2][0], face.coords[2][1], face.coords[2][2]);
                     glTexCoord2d(0, 1);
+                    glVertex3f(face.coords[0][0], face.coords[0][1], face.coords[0][2]);
+                    glTexCoord2d(0, 0);
+                    glVertex3f(face.coords[1][0], face.coords[1][1], face.coords[1][2]);
+                    glTexCoord2d(1, 0);
+                    glVertex3f(face.coords[2][0], face.coords[2][1], face.coords[2][2]);
+                    glTexCoord2d(1, 1);
                     glVertex3f(face.coords[3][0], face.coords[3][1], face.coords[3][2]);
 
                     glEnd();
@@ -115,7 +128,7 @@ void C3dView::drawRubik(bool forceColor) {
     }
 }
 //-----------------------------------------------------------------------------------------------
-void C3dView::loadTexture(CRubik::EFace, QString textureName, GLuint *texture) {
+void C3dView::loadTexture(QString textureName, GLuint *texture) {
     QImage im(textureName);
     QImage tex = QGLWidget::convertToGLFormat(im);
 
@@ -137,8 +150,8 @@ void C3dView::loadTexture(CRubik::EFace, QString textureName, GLuint *texture) {
 //-----------------------------------------------------------------------------------------------
 void C3dView::onTimerTimeout(void) {
     rotx=static_cast<float>((static_cast<int>(rotx) + 5) % 360);
-    roty=static_cast<float>((static_cast<int>(roty) + 5) % 360);
-    rotz=static_cast<float>((static_cast<int>(rotz) + 5) % 360);
+    //roty=static_cast<float>((static_cast<int>(roty) + 5) % 360);
+    //rotz=static_cast<float>((static_cast<int>(rotz) + 5) % 360);
 
     updateGL();
 }

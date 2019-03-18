@@ -11,22 +11,24 @@ class C3dView : public QGLWidget {
     Q_OBJECT
 public:
     explicit C3dView(QWidget *parent = nullptr);
+    ~C3dView(void);
     void initializeGL();
     void resizeGL(int width, int height);
     void paintGL();
-    void rotate(int idRotateGroupe, CRubik::ERotate rotateSens);
+    void rotate(int idRotateGroupe, CRubik::ERotate rotateSens, bool inverse=false);
     void melange(void);
+    void solve(void);
 protected:
     virtual void wheelEvent(QWheelEvent * event);
 private:
-    CRubik rubik;
+    CRubik *rubik;
     float scale;
     QTimer *timer;
     float roty, rotx, rotz;
-    GLuint textures[NBFACE];
+    GLuint textures[NBFACE+1];
 
     void drawRubik(bool forceColor);
-    void loadTexture(CRubik::EFace, QString textureName, GLuint *texture);
+    void loadTexture( QString textureName, GLuint *texture);
 private slots:
     void onTimerTimeout(void);
     void onRubikRotateStep(void);

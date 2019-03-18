@@ -13,6 +13,7 @@ private slots:
     void on_pbY_clicked(bool checked=false);
     void on_pbZ_clicked(bool checked=false);
     void on_pbMelange_clicked(bool checked=false);
+    void on_pbSolve_clicked(bool checked=false);
 };
 
 #endif // CMAINWINDOW_H

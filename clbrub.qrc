@@ -6,5 +6,6 @@
         <file>rouge.png</file>
         <file>vert.png</file>
         <file>jaune.png</file>
+        <file>blancClb.png</file>
     </qresource>
 </RCC>
