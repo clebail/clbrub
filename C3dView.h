@@ -23,9 +23,10 @@ private:
     float scale;
     QTimer *timer;
     float roty, rotx, rotz;
-    QOpenGLTexture *textures[NBFACE];
+    GLuint textures[NBFACE];
 
     void drawRubik(bool forceColor);
+    void loadTexture(CRubik::EFace, QString textureName, GLuint *texture);
 private slots:
     void onTimerTimeout(void);
     void onRubikRotateStep(void);

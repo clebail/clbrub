@@ -14,7 +14,7 @@ C3dView::C3dView(QWidget *parent) : QGLWidget(parent), rubik() {
     timer->setInterval(40);
     //timer->start();
 
-    memset(textures, 0, sizeof(textures));
+    memset(textures, 0, sizeof(GLuint) * NBFACE);
 
     connect(&rubik, SIGNAL(rotatestep()), this, SLOT(onRubikRotateStep()));
 }
@@ -25,7 +25,12 @@ void C3dView::initializeGL() {
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
 
-    textures[CRubik::crefOrange] = new QOpenGLTexture(QImage(":/textures/orange.png"));
+    loadTexture(CRubik::crefBlue, ":/textures/bleu.png", &textures[CRubik::crefBlue]);
+    loadTexture(CRubik::crefVert, ":/textures/vert.png", &textures[CRubik::crefVert]);
+    loadTexture(CRubik::crefBlanc, ":/textures/blanc.png", &textures[CRubik::crefBlanc]);
+    loadTexture(CRubik::crefJaune, ":/textures/jaune.png", &textures[CRubik::crefJaune]);
+    loadTexture(CRubik::crefRouge, ":/textures/rouge.png", &textures[CRubik::crefRouge]);
+    loadTexture(CRubik::crefOrange, ":/textures/orange.png", &textures[CRubik::crefOrange]);
 }
 //-----------------------------------------------------------------------------------------------
 void C3dView::resizeGL(int width, int height) {
@@ -74,7 +79,7 @@ void C3dView::wheelEvent(QWheelEvent * event) {
 }
 //-----------------------------------------------------------------------------------------------
 void C3dView::drawRubik(bool forceColor) {
-    int x, y, z, i, j, k;
+    int x, y, z, i, j;
 
     for(z=i=0;z<RUBIKSIZE;z++) {
         for(y=0;y<RUBIKSIZE;y++) {
@@ -82,17 +87,52 @@ void C3dView::drawRubik(bool forceColor) {
                 for(j=0;j<NBFACE;j++) {
                     CRubik::SFace face = rubik.getSubFace(i, j);
 
+                    if(forceColor) {
+                        qglColor(Qt::black);
+                    }else if(textures[face.colorFace] != 0) {
+                        glEnable(GL_TEXTURE_2D);
+                        glBindTexture(GL_TEXTURE_2D, textures[face.colorFace]);
+                    }else {
+                        qglColor(face.color);
+                    }
 
                     glBegin(GL_QUADS);
-                    qglColor(forceColor ? Qt::black : face.color);
-                    for(k=0;k<NBSOMMET;++k) {
-                        glVertex3f(face.coords[k][0], face.coords[k][1], face.coords[k][2]);
-                    }
+
+                    glTexCoord2d(1, 1);
+                    glVertex3f(face.coords[0][0], face.coords[0][1], face.coords[0][2]);
+                    glTexCoord2d(1, 0);
+                    glVertex3f(face.coords[1][0], face.coords[1][1], face.coords[1][2]);
+                    glTexCoord2d(0, 0);
+                    glVertex3f(face.coords[2][0], face.coords[2][1], face.coords[2][2]);
+                    glTexCoord2d(0, 1);
+                    glVertex3f(face.coords[3][0], face.coords[3][1], face.coords[3][2]);
+
                     glEnd();
+                    glDisable(GL_TEXTURE_2D);
                 }
             }
         }
     }
+}
+//-----------------------------------------------------------------------------------------------
+void C3dView::loadTexture(CRubik::EFace, QString textureName, GLuint *texture) {
+    QImage im(textureName);
+    QImage tex = QGLWidget::convertToGLFormat(im);
+
+    glEnable(GL_TEXTURE_2D);
+
+    glGenTextures(1, texture);
+    glBindTexture(GL_TEXTURE_2D, *texture);
+
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex.width(), tex.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, tex.bits());
+
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+
+    glDisable(GL_TEXTURE_2D);
 }
 //-----------------------------------------------------------------------------------------------
 void C3dView::onTimerTimeout(void) {
