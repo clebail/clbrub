@@ -69,6 +69,10 @@ private:
     void init(void);
     void calculGroupes(void);
     CRubik::SMouvement createMouvement(void);
+    void triPopulation(CRubik **population);
+    void swapIndividus(CRubik **idv1, CRubik **idv2);
+    void croiseIndividus(CRubik **population);
+    void from(CRubik *idv1, CRubik *idv2, int seuil);
 signals:
     void rotatestep(void);
 };
