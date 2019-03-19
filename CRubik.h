@@ -71,8 +71,8 @@ private:
     CRubik::SMouvement createMouvement(void);
     void triPopulation(CRubik **population);
     void swapIndividus(CRubik **idv1, CRubik **idv2);
-    void croiseIndividus(CRubik **population);
-    void from(CRubik *idv1, CRubik *idv2, int seuil);
+    void croiseIndividus(CRubik **population, const QList<SMouvement>& melange);
+    void from(CRubik *idv1, CRubik *idv2, int seuil, const QList<SMouvement> &melange);
 signals:
     void rotatestep(void);
 };

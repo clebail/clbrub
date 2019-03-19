@@ -6,7 +6,7 @@
 #include "CRubik.h"
 
 #define TAILLE_POPULATION                   100
-#define TAILLE_GENOME                       50
+#define TAILLE_GENOME                       25
 
 CRubik::CRubik(void) {
     init();
@@ -149,7 +149,7 @@ QList<CRubik::SMouvement> CRubik::solve(void) {
             CRubik::SMouvement mouvement = createMouvement();
 
             population[i]->mouvements.append(mouvement);
-            population[i]->rotate(mouvement.groupe, mouvement.sens,mouvement.inverse, 1, 0);
+            population[i]->rotate(mouvement.groupe, mouvement.sens, mouvement.inverse, 1, 0);
         }
     }
 
@@ -163,14 +163,20 @@ QList<CRubik::SMouvement> CRubik::solve(void) {
         qDebug() << population[0]->getScore() << population[TAILLE_POPULATION-1]->getScore();
 
         if(!fini) {
-            croiseIndividus(population);
+            croiseIndividus(population, this->mouvements);
         }
 
-        fini = ++j >= 10;
+        fini = ++j >= 1000;
     }
+
+    mouvements = population[0]->mouvements;
 
     for(i=0;i<TAILLE_POPULATION;i++) {
         delete population[i];
+    }
+
+    for(int i=0;i<mouvements.size();i++) {
+        rotate(mouvements.at(i).groupe, mouvements.at(i).sens, mouvements.at(i).inverse, ROTATE_STEP, 40);
     }
 
     return mouvements;
@@ -285,7 +291,7 @@ void CRubik::swapIndividus(CRubik **idv1, CRubik **idv2) {
     *idv2 = tmp;
 }
 
-void CRubik::croiseIndividus(CRubik **population) {
+void CRubik::croiseIndividus(CRubik **population, const QList<SMouvement> &melange) {
     int i, ir, max;
 
     i = 1;
@@ -294,19 +300,23 @@ void CRubik::croiseIndividus(CRubik **population) {
     while(i < max) {
         int seuil = rand() % TAILLE_GENOME;
 
-        population[ir]->from(population[i], population[i-1], seuil);
-        population[ir-1]->from(population[i-1], population[i], seuil);
+        population[ir]->from(population[i], population[i-1], seuil, melange);
+        population[ir-1]->from(population[i-1], population[i], seuil, melange);
 
         i += 2;
         ir -= 2;
     }
 }
 
-void CRubik::from(CRubik *idv1, CRubik *idv2, int seuil) {
+void CRubik::from(CRubik *idv1, CRubik *idv2, int seuil, const QList<SMouvement> &melange) {
     CRubik *src = idv1;
     int i;
 
     init();
+    for(i=0;i<melange.size();i++) {
+       rotate(melange.at(i).groupe, melange.at(i).sens, melange.at(i).inverse, 1, 0);
+    }
+
     mouvements.clear();
     for(i=0;i<TAILLE_GENOME;i++) {
         if(i == seuil) {
