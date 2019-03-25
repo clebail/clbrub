@@ -3,7 +3,7 @@
 #include <QWheelEvent>
 #include "C3dView.h"
 //-----------------------------------------------------------------------------------------------
-C3dView::C3dView(QWidget *parent) : QGLWidget(parent), rubik() {
+C3dView::C3dView(QWidget *parent) : QGLWidget(parent) {
     scale = 1.0;
     rotx = roty = rotz = 0.0;
     roty = 45.0;
@@ -17,11 +17,10 @@ C3dView::C3dView(QWidget *parent) : QGLWidget(parent), rubik() {
     memset(textures, 0, sizeof(GLuint) * (NBFACE + 1));
 
     rubik = new CRubik();
-    connect(rubik, SIGNAL(rotatestep()), this, SLOT(onRubikRotateStep()));
 }
 //-----------------------------------------------------------------------------------------------
 C3dView::~C3dView(void) {
-    rubik->deleteLater();
+    delete rubik;
 }
 //-----------------------------------------------------------------------------------------------
 void C3dView::initializeGL() {
@@ -73,6 +72,7 @@ void C3dView::paintGL() {
 //-----------------------------------------------------------------------------------------------
 void C3dView::rotate(int idRotateGroupe, CRubik::ERotate rotateSens, bool inverse) {
     rubik->rotate(idRotateGroupe, rotateSens, inverse);
+    updateGL();
 }
 //-----------------------------------------------------------------------------------------------
 void C3dView::melange(void) {
@@ -149,14 +149,11 @@ void C3dView::loadTexture(QString textureName, GLuint *texture) {
 }
 //-----------------------------------------------------------------------------------------------
 void C3dView::onTimerTimeout(void) {
-    rotx=static_cast<float>((static_cast<int>(rotx) + 5) % 360);
+    //rotx=static_cast<float>((static_cast<int>(rotx) + 5) % 360);
     //roty=static_cast<float>((static_cast<int>(roty) + 5) % 360);
     //rotz=static_cast<float>((static_cast<int>(rotz) + 5) % 360);
 
     updateGL();
 }
 //-----------------------------------------------------------------------------------------------
-void C3dView::onRubikRotateStep(void) {
-    updateGL();
-}
-//-----------------------------------------------------------------------------------------------
+

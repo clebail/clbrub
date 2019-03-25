@@ -93,7 +93,7 @@ void CRubik::rotate(int idRotateGroupe, CRubik::ERotate rotateSens, bool inverse
 
         if(ts != 0) {
             QThread::currentThread()->msleep(ts);
-            emit(rotatestep());
+            //todo updateGL
         }
     }
 
@@ -108,7 +108,9 @@ void CRubik::melange(void) {
         mouvements.append(createMouvement());
     }
 
-    start();
+    for(int i=0;i<mouvements.size();i++) {
+        rotate(mouvements.at(i).groupe, mouvements.at(i).sens, mouvements.at(i).inverse, ROTATE_STEP, 20);
+    }
 }
 
 int CRubik::getScore(void) const {
@@ -137,55 +139,8 @@ int CRubik::getScore(void) const {
 
 QList<CRubik::SMouvement> CRubik::solve(void) {
     QList<CRubik::SMouvement> mouvements;
-    CRubik *population[TAILLE_POPULATION];
-    int i, j;
-    bool fini = false;
-
-    //Initialisation de la population
-    for(i=0;i<TAILLE_POPULATION;i++) {
-        population[i] = new CRubik(this->mouvements);
-
-        for(j=0;j<TAILLE_GENOME;j++) {
-            CRubik::SMouvement mouvement = createMouvement();
-
-            population[i]->mouvements.append(mouvement);
-            population[i]->rotate(mouvement.groupe, mouvement.sens, mouvement.inverse, 1, 0);
-        }
-    }
-
-    j = 0;
-    while(!fini) {
-        //Tri de la population
-        triPopulation(population);
-
-        fini = population[0]->getScore() == 0;
-
-        qDebug() << population[0]->getScore() << population[TAILLE_POPULATION-1]->getScore();
-
-        if(!fini) {
-            croiseIndividus(population, this->mouvements);
-        }
-
-        fini = ++j >= 1000;
-    }
-
-    mouvements = population[0]->mouvements;
-
-    for(i=0;i<TAILLE_POPULATION;i++) {
-        delete population[i];
-    }
-
-    for(int i=0;i<mouvements.size();i++) {
-        rotate(mouvements.at(i).groupe, mouvements.at(i).sens, mouvements.at(i).inverse, ROTATE_STEP, 40);
-    }
 
     return mouvements;
-}
-
-void CRubik::run(void) {
-    for(int i=0;i<mouvements.size();i++) {
-        rotate(mouvements.at(i).groupe, mouvements.at(i).sens, mouvements.at(i).inverse, ROTATE_STEP, 20);
-    }
 }
 
 void CRubik::init(void) {
@@ -271,70 +226,6 @@ CRubik::SMouvement CRubik::createMouvement(void) {
 
     return mouvement;
 }
-
-void CRubik::triPopulation(CRubik **population) {
-    int i, j;
-
-    for(i=TAILLE_POPULATION-1;i>=1;i--) {
-        for(j=0;j<=i-1;j++) {
-            if(population[j+1]->getScore() < population[j]->getScore()) {
-                swapIndividus(&population[j+1], &population[j]);
-            }
-        }
-    }
-}
-
-void CRubik::swapIndividus(CRubik **idv1, CRubik **idv2) {
-    CRubik *tmp = *idv1;
-
-    *idv1 = *idv2;
-    *idv2 = tmp;
-}
-
-void CRubik::croiseIndividus(CRubik **population, const QList<SMouvement> &melange) {
-    int i, ir, max;
-
-    i = 1;
-    ir = TAILLE_POPULATION - 1;
-    max = TAILLE_POPULATION / 2;
-    while(i < max) {
-        int seuil = rand() % TAILLE_GENOME;
-
-        population[ir]->from(population[i], population[i-1], seuil, melange);
-        population[ir-1]->from(population[i-1], population[i], seuil, melange);
-
-        i += 2;
-        ir -= 2;
-    }
-}
-
-void CRubik::from(CRubik *idv1, CRubik *idv2, int seuil, const QList<SMouvement> &melange) {
-    CRubik *src = idv1;
-    int i;
-
-    init();
-    for(i=0;i<melange.size();i++) {
-       rotate(melange.at(i).groupe, melange.at(i).sens, melange.at(i).inverse, 1, 0);
-    }
-
-    mouvements.clear();
-    for(i=0;i<TAILLE_GENOME;i++) {
-        if(i == seuil) {
-            src = idv2;
-        }
-
-        mouvements.append(src->mouvements.at(i));
-    }
-
-    if(rand() % 100 > 80) {
-        mouvements[rand() % TAILLE_GENOME] = createMouvement();
-    }
-
-    for(i=0;i<mouvements.size();i++) {
-       rotate(mouvements.at(i).groupe, mouvements.at(i).sens, mouvements.at(i).inverse, 1, 0);
-    }
-}
-
 
 CRubik::SMouvement::operator QString(void) const {
     QString result = "";

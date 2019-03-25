@@ -31,7 +31,6 @@ private:
     void loadTexture( QString textureName, GLuint *texture);
 private slots:
     void onTimerTimeout(void);
-    void onRubikRotateStep(void);
 };
 //-----------------------------------------------------------------------------------------------
 #endif // C3DVIEW_H

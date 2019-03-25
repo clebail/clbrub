@@ -17,8 +17,7 @@
 #define ROTATE_STEP                 5
 #define MVTPAD                      3
 
-class CRubik : public QThread {
-    Q_OBJECT
+class CRubik : public QObject {
 public:
     typedef enum { crefRouge, crefOrange, crefBlue, crefVert, crefJaune, crefBlanc, crefBlancClb, crefBlack } EFace;
     typedef enum { crrsX, crrsY, crrsZ } ERotate;
@@ -54,8 +53,6 @@ public:
     void melange(void);
     int getScore(void) const;
     QList<CRubik::SMouvement> solve(void);
-protected:
-    void run(void);
 private:
     typedef struct _SCube {
         SFace faces[NBFACE];
@@ -69,12 +66,6 @@ private:
     void init(void);
     void calculGroupes(void);
     CRubik::SMouvement createMouvement(void);
-    void triPopulation(CRubik **population);
-    void swapIndividus(CRubik **idv1, CRubik **idv2);
-    void croiseIndividus(CRubik **population, const QList<SMouvement>& melange);
-    void from(CRubik *idv1, CRubik *idv2, int seuil, const QList<SMouvement> &melange);
-signals:
-    void rotatestep(void);
 };
 
 #endif // CRUBIK_H
