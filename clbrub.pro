@@ -11,7 +11,7 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = clbrub
 TEMPLATE = app
 CONFIG += link_pkgconfig
-PKGCONFIG += python3
+PKGCONFIG += python-3.4
 
 # The following define makes your compiler emit warnings if you use
 # any feature of Qt which has been marked as deprecated (the exact warnings

@@ -4,6 +4,7 @@
 #include <QThread>
 #include <QColor>
 #include <QList>
+#include <QGLWidget>
 
 #define DIMENSION                   3
 #define NBSOMMET                    4
@@ -49,8 +50,8 @@ public:
     CRubik(const QList<SMouvement>& mouvements);
 
     const CRubik::SFace& getSubFace(int idCube, int idFace) const;
-    void rotate(int idRotateGroupe, CRubik::ERotate rotateSens, bool inverse, int stepCount = ROTATE_STEP, unsigned int ts = 40);
-    void melange(void);
+    void rotate(int idRotateGroupe, CRubik::ERotate rotateSens, bool inverse, int stepCount = ROTATE_STEP, unsigned int ts = 40, QGLWidget *render = nullptr);
+    void melange(QGLWidget *render = nullptr);
     int getScore(void) const;
     QList<CRubik::SMouvement> solve(void);
 private:

@@ -71,12 +71,12 @@ void C3dView::paintGL() {
 }
 //-----------------------------------------------------------------------------------------------
 void C3dView::rotate(int idRotateGroupe, CRubik::ERotate rotateSens, bool inverse) {
-    rubik->rotate(idRotateGroupe, rotateSens, inverse);
+    rubik->rotate(idRotateGroupe, rotateSens, inverse, ROTATE_STEP, 40, this);
     updateGL();
 }
 //-----------------------------------------------------------------------------------------------
 void C3dView::melange(void) {
-    rubik->melange();
+    rubik->melange(this);
 }
 //-----------------------------------------------------------------------------------------------
 void C3dView::solve(void) {
@@ -146,6 +146,10 @@ void C3dView::loadTexture(QString textureName, GLuint *texture) {
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
 
     glDisable(GL_TEXTURE_2D);
+}
+//-----------------------------------------------------------------------------------------------
+void C3dView::renderRotate(void) {
+    updateGL();
 }
 //-----------------------------------------------------------------------------------------------
 void C3dView::onTimerTimeout(void) {

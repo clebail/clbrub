@@ -29,6 +29,7 @@ private:
 
     void drawRubik(bool forceColor);
     void loadTexture( QString textureName, GLuint *texture);
+    void renderRotate(void);
 private slots:
     void onTimerTimeout(void);
 };

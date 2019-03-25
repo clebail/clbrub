@@ -27,7 +27,7 @@ const CRubik::SFace& CRubik::getSubFace(int idCube, int idFace) const {
     return cubes[idCube].faces[idFace];
 }
 
-void CRubik::rotate(int idRotateGroupe, CRubik::ERotate rotateSens, bool inverse, int stepCount, unsigned int ts) {
+void CRubik::rotate(int idRotateGroupe, CRubik::ERotate rotateSens, bool inverse, int stepCount, unsigned int ts, QGLWidget *render) {
     int step;
     int coef = (inverse ? -1 : 1);
     double angle = static_cast<double>(90/stepCount) * coef;
@@ -91,16 +91,16 @@ void CRubik::rotate(int idRotateGroupe, CRubik::ERotate rotateSens, bool inverse
             }
         }
 
-        if(ts != 0) {
+        if(ts != 0 && render != nullptr) {
             QThread::currentThread()->msleep(ts);
-            //todo updateGL
+            render->updateGL();
         }
     }
 
     calculGroupes();
 }
 
-void CRubik::melange(void) {
+void CRubik::melange(QGLWidget *render) {
     srand(static_cast<unsigned int>(time(nullptr)));
     mouvements.clear();
 
@@ -109,7 +109,7 @@ void CRubik::melange(void) {
     }
 
     for(int i=0;i<mouvements.size();i++) {
-        rotate(mouvements.at(i).groupe, mouvements.at(i).sens, mouvements.at(i).inverse, ROTATE_STEP, 20);
+        rotate(mouvements.at(i).groupe, mouvements.at(i).sens, mouvements.at(i).inverse, ROTATE_STEP, 20, render);
     }
 }
 
