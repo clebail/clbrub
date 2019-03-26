@@ -15,7 +15,7 @@ public:
     void initializeGL();
     void resizeGL(int width, int height);
     void paintGL();
-    void rotate(int idRotateGroupe, CRubik::ERotate rotateSens, bool inverse=false);
+    void rotate(int idRotateGroupe, CMouvement::ERotate rotateSens, bool inverse=false);
     void melange(void);
     void solve(void);
 protected:

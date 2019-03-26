@@ -12,14 +12,15 @@ CRubik::CRubik(void) {
     init();
 }
 
-CRubik::CRubik(const QList<SMouvement>& mouvements) {
+CRubik::CRubik(const QList<CMouvement>& mouvements) {
     int i;
 
     init();
 
     for(i=0;i<mouvements.size();i++) {
-        SMouvement mouvement = mouvements.at(i);
-        rotate(mouvement.groupe, mouvement.sens, mouvement.inverse, 1, 0);
+        CMouvement mouvement = mouvements.at(i);
+
+        rotate(mouvement.getGroupe(), mouvement.getSens(), mouvement.getInverse(), 1, 0);
     }
 }
 
@@ -27,7 +28,7 @@ const CRubik::SFace& CRubik::getSubFace(int idCube, int idFace) const {
     return cubes[idCube].faces[idFace];
 }
 
-void CRubik::rotate(int idRotateGroupe, CRubik::ERotate rotateSens, bool inverse, int stepCount, unsigned int ts, QGLWidget *render) {
+void CRubik::rotate(int idRotateGroupe, CMouvement::ERotate rotateSens, bool inverse, int stepCount, unsigned int ts, QGLWidget *render) {
     int step;
     int coef = (inverse ? -1 : 1);
     double angle = static_cast<double>(90/stepCount) * coef;
@@ -48,15 +49,15 @@ void CRubik::rotate(int idRotateGroupe, CRubik::ERotate rotateSens, bool inverse
                     int zc = cube->zc;
 
                     switch(rotateSens) {
-                    case CRubik::crrsX:
+                    case CMouvement::crrsX:
                         cube->yc = static_cast<int>(zc * coef);
                         cube->zc = static_cast<int>(-yc * coef);
                         break;
-                    case CRubik::crrsY:
+                    case CMouvement::crrsY:
                         cube->xc = static_cast<int>(zc * coef);
                         cube->zc = static_cast<int>(-xc * coef);
                         break;
-                    case CRubik::crrsZ:
+                    case CMouvement::crrsZ:
                         cube->xc = static_cast<int>(-yc * coef);
                         cube->yc = static_cast<int>(xc * coef);
                         break;
@@ -73,15 +74,15 @@ void CRubik::rotate(int idRotateGroupe, CRubik::ERotate rotateSens, bool inverse
                         float z = cube->faces[j].coords[k][2];
 
                         switch(rotateSens) {
-                        case CRubik::crrsX:
+                        case CMouvement::crrsX:
                             cube->faces[j].coords[k][1] = y*c+z*s;
                             cube->faces[j].coords[k][2] = z*c-y*s;
                             break;
-                        case CRubik::crrsY:
+                        case CMouvement::crrsY:
                             cube->faces[j].coords[k][0] = x*c+z*s;
                             cube->faces[j].coords[k][2] = z*c-x*s;
                             break;
-                        case CRubik::crrsZ:
+                        case CMouvement::crrsZ:
                             cube->faces[j].coords[k][0] = x*c-y*s;
                             cube->faces[j].coords[k][1] = y*c+x*s;
                             break;
@@ -105,11 +106,15 @@ void CRubik::melange(QGLWidget *render) {
     mouvements.clear();
 
     for(int i=0;i<50;i++) {
-        mouvements.append(createMouvement());
+        mouvements.append(CMouvement::createMouvement());
     }
 
     for(int i=0;i<mouvements.size();i++) {
-        rotate(mouvements.at(i).groupe, mouvements.at(i).sens, mouvements.at(i).inverse, ROTATE_STEP, 20, render);
+        CMouvement mouvement = mouvements.at(i);
+
+        rotate(mouvement.getGroupe(), mouvement.getSens(), mouvement.getInverse(), ROTATE_STEP, 20, render);
+
+        qDebug() << mouvement;
     }
 }
 
@@ -137,8 +142,8 @@ int CRubik::getScore(void) const {
     return score;
 }
 
-QList<CRubik::SMouvement> CRubik::solve(void) {
-    QList<CRubik::SMouvement> mouvements;
+QList<CMouvement> CRubik::solve(void) {
+    QList<CMouvement> mouvements;
 
     return mouvements;
 }
@@ -215,25 +220,4 @@ void CRubik::calculGroupes(void) {
     }
 }
 
-CRubik::SMouvement CRubik::createMouvement(void) {
-    int sens = rand() % 3;
-    int face = rand() % RUBIKSIZE;
-    CRubik::SMouvement mouvement;
-
-    mouvement.groupe = face + sens * RUBIKSIZE;
-    mouvement.sens = static_cast<CRubik::ERotate>(sens);
-    mouvement.inverse = rand() % 2 == 1;
-
-    return mouvement;
-}
-
-CRubik::SMouvement::operator QString(void) const {
-    QString result = "";
-
-    result += QString::number(groupe).rightJustified(MVTPAD, '0');
-    result += (sens == CRubik::crrsX ? "X" : (sens == CRubik::crrsY ? "Y" : "Z"));
-    result += (inverse ? "1" : "0");
-
-    return result;
-}
 

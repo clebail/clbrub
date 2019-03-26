@@ -5,15 +5,15 @@ CMainWindow::CMainWindow(QWidget *parent) : QMainWindow(parent) {
 }
 
 void CMainWindow::on_pbX_clicked(bool) {
-    w3d->rotate(0, CRubik::crrsX, cbInverse->isChecked());
+    w3d->rotate(0, CMouvement::crrsX, cbInverse->isChecked());
 }
 
 void CMainWindow::on_pbY_clicked(bool) {
-    w3d->rotate(3, CRubik::crrsY, cbInverse->isChecked());
+    w3d->rotate(3, CMouvement::crrsY, cbInverse->isChecked());
 }
 
 void CMainWindow::on_pbZ_clicked(bool) {
-    w3d->rotate(6, CRubik::crrsZ, cbInverse->isChecked());
+    w3d->rotate(6, CMouvement::crrsZ, cbInverse->isChecked());
 }
 
 void CMainWindow::on_pbMelange_clicked(bool) {

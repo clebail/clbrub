@@ -11,7 +11,7 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = clbrub
 TEMPLATE = app
 CONFIG += link_pkgconfig
-PKGCONFIG += python-3.4
+PKGCONFIG += python3
 
 # The following define makes your compiler emit warnings if you use
 # any feature of Qt which has been marked as deprecated (the exact warnings
@@ -26,16 +26,49 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 CONFIG += c++11
 
+FLEXSOURCES = mouvements.l
+BISONSOURCES = mouvements.y
+
+flex.commands = flex -o ${QMAKE_FILE_OUT} --c++ ${QMAKE_FILE_IN}
+flex.input = FLEXSOURCES
+flex.output = mouvements.l.cpp
+flex.variable_out = SOURCES
+flex.depends = mouvements.y.hpp
+flex.name = flex
+QMAKE_EXTRA_COMPILERS += flex
+
+bison.commands = bison -o ${QMAKE_FILE_OUT} -d ${QMAKE_FILE_IN}
+bison.input = BISONSOURCES
+bison.output = mouvements.y.cpp
+bison.variable_out = SOURCES
+bison.name = bison
+QMAKE_EXTRA_COMPILERS += bison
+
+bisonheader.commands = @true
+bisonheader.input = BISONSOURCES
+bisonheader.output = mouvements.y.hpp
+bisonheader.variable_out = HEADERS
+bisonheader.name = bison header
+bisonheader.depends = mouvements.y.cpp
+QMAKE_EXTRA_COMPILERS += bisonheader
+
+OTHER_FILES += \
+    $$BISONSOURCES \
+    $$FLEXSOURCES
+
 SOURCES += \
         main.cpp \
         CMainWindow.cpp \
-    C3dView.cpp \
-    CRubik.cpp
+        C3dView.cpp \
+        CRubik.cpp \
+        CMouvement.cpp
 
 HEADERS += \
         CMainWindow.h \
-    C3dView.h \
-    CRubik.h
+        C3dView.h \
+        CRubik.h \
+        CMouvement.h \
+        CScanner.h
 
 FORMS += \
         CMainWindow.ui
@@ -46,4 +79,4 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 RESOURCES += \
-    clbrub.qrc
+        clbrub.qrc

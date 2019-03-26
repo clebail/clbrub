@@ -3,3 +3,7 @@ ui_*.*
 *.o
 qrc_*.*
 Makefile
+mouvements.l.cpp
+mouvements.y.cpp
+mouvements.y.hpp
+stack.hh

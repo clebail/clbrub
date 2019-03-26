@@ -70,7 +70,7 @@ void C3dView::paintGL() {
     drawRubik(false);
 }
 //-----------------------------------------------------------------------------------------------
-void C3dView::rotate(int idRotateGroupe, CRubik::ERotate rotateSens, bool inverse) {
+void C3dView::rotate(int idRotateGroupe, CMouvement::ERotate rotateSens, bool inverse) {
     rubik->rotate(idRotateGroupe, rotateSens, inverse, ROTATE_STEP, 40, this);
     updateGL();
 }
