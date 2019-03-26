@@ -16,11 +16,10 @@ C3dView::C3dView(QWidget *parent) : QGLWidget(parent) {
 
     memset(textures, 0, sizeof(GLuint) * (NBFACE + 1));
 
-    rubik = new CRubik();
+    rubik = nullptr;
 }
 //-----------------------------------------------------------------------------------------------
 C3dView::~C3dView(void) {
-    delete rubik;
 }
 //-----------------------------------------------------------------------------------------------
 void C3dView::initializeGL() {
@@ -70,17 +69,9 @@ void C3dView::paintGL() {
     drawRubik(false);
 }
 //-----------------------------------------------------------------------------------------------
-void C3dView::rotate(int idRotateGroupe, CMouvement::ERotate rotateSens, bool inverse) {
-    rubik->rotate(idRotateGroupe, rotateSens, inverse, ROTATE_STEP, 40, this);
+void C3dView::setRubik(CRubik *rubik) {
+    this->rubik = rubik;
     updateGL();
-}
-//-----------------------------------------------------------------------------------------------
-void C3dView::melange(void) {
-    rubik->melange(this);
-}
-//-----------------------------------------------------------------------------------------------
-void C3dView::solve(void) {
-    rubik->solve();
 }
 //-----------------------------------------------------------------------------------------------
 void C3dView::wheelEvent(QWheelEvent * event) {
@@ -91,37 +82,39 @@ void C3dView::wheelEvent(QWheelEvent * event) {
 void C3dView::drawRubik(bool forceColor) {
     int x, y, z, i, j;
 
-    for(z=i=0;z<RUBIKSIZE;z++) {
-        for(y=0;y<RUBIKSIZE;y++) {
-            for(x=0;x<RUBIKSIZE;x++,i++) {
-                for(j=0;j<NBFACE;j++) {
-                    CRubik::SFace face = rubik->getSubFace(i, j);
+    if(rubik != nullptr) {
+        for(z=i=0;z<RUBIKSIZE;z++) {
+            for(y=0;y<RUBIKSIZE;y++) {
+                for(x=0;x<RUBIKSIZE;x++,i++) {
+                    for(j=0;j<NBFACE;j++) {
+                        CRubik::SFace face = rubik->getSubFace(i, j);
 
-                    if(forceColor && face.colorFace == CRubik::crefBlack) {
-                        qglColor(Qt::black);
-                    } else {
-                        GLuint texture = textures[face.colorFace];
-                        glEnable(GL_TEXTURE_2D);
+                        if(forceColor && face.colorFace == CRubik::crefBlack) {
+                            qglColor(Qt::black);
+                        } else {
+                            GLuint texture = textures[face.colorFace];
+                            glEnable(GL_TEXTURE_2D);
 
-                        if(face.clb) {
-                            texture = textures[NBFACE];
+                            if(face.clb) {
+                                texture = textures[NBFACE];
+                            }
+                            glBindTexture(GL_TEXTURE_2D, texture);
                         }
-                        glBindTexture(GL_TEXTURE_2D, texture);
+
+                        glBegin(GL_QUADS);
+
+                        glTexCoord2d(0, 1);
+                        glVertex3f(face.coords[0][0], face.coords[0][1], face.coords[0][2]);
+                        glTexCoord2d(0, 0);
+                        glVertex3f(face.coords[1][0], face.coords[1][1], face.coords[1][2]);
+                        glTexCoord2d(1, 0);
+                        glVertex3f(face.coords[2][0], face.coords[2][1], face.coords[2][2]);
+                        glTexCoord2d(1, 1);
+                        glVertex3f(face.coords[3][0], face.coords[3][1], face.coords[3][2]);
+
+                        glEnd();
+                        glDisable(GL_TEXTURE_2D);
                     }
-
-                    glBegin(GL_QUADS);
-
-                    glTexCoord2d(0, 1);
-                    glVertex3f(face.coords[0][0], face.coords[0][1], face.coords[0][2]);
-                    glTexCoord2d(0, 0);
-                    glVertex3f(face.coords[1][0], face.coords[1][1], face.coords[1][2]);
-                    glTexCoord2d(1, 0);
-                    glVertex3f(face.coords[2][0], face.coords[2][1], face.coords[2][2]);
-                    glTexCoord2d(1, 1);
-                    glVertex3f(face.coords[3][0], face.coords[3][1], face.coords[3][2]);
-
-                    glEnd();
-                    glDisable(GL_TEXTURE_2D);
                 }
             }
         }
@@ -146,10 +139,6 @@ void C3dView::loadTexture(QString textureName, GLuint *texture) {
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
 
     glDisable(GL_TEXTURE_2D);
-}
-//-----------------------------------------------------------------------------------------------
-void C3dView::renderRotate(void) {
-    updateGL();
 }
 //-----------------------------------------------------------------------------------------------
 void C3dView::onTimerTimeout(void) {

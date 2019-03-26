@@ -7,13 +7,11 @@
 class CMainWindow : public QMainWindow, private Ui::CMainWindow {
     Q_OBJECT
 public:
-    explicit CMainWindow(QWidget *parent = nullptr);
+    explicit CMainWindow(CRubik *rubik, QWidget *parent = nullptr);
+private:
+    CRubik *rubik;
 private slots:
-    void on_pbX_clicked(bool checked=false);
-    void on_pbY_clicked(bool checked=false);
-    void on_pbZ_clicked(bool checked=false);
-    void on_pbMelange_clicked(bool checked=false);
-    void on_pbSolve_clicked(bool checked=false);
+    void on_pbRun_clicked();
 };
 
 #endif // CMAINWINDOW_H

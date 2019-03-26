@@ -113,8 +113,6 @@ void CRubik::melange(QGLWidget *render) {
         CMouvement mouvement = mouvements.at(i);
 
         rotate(mouvement.getGroupe(), mouvement.getSens(), mouvement.getInverse(), ROTATE_STEP, 20, render);
-
-        qDebug() << mouvement;
     }
 }
 

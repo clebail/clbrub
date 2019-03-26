@@ -2,7 +2,7 @@
 
 %defines
 %define api.namespace {yy}
-%define api.parser.class {CParser}
+%define parser_class_name {CParser}
 %code requires {
 	#include <iostream>
     #include <QtDebug>
