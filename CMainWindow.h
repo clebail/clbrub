@@ -10,6 +10,8 @@ public:
     explicit CMainWindow(CRubik *rubik, QWidget *parent = nullptr);
 private:
     CRubik *rubik;
+
+    void runScript(const char* script);
 private slots:
     void on_pbRun_clicked();
 };

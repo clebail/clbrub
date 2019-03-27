@@ -13,7 +13,7 @@ public:
     CMouvement();
     CMouvement(QChar type);
     operator QString(void) const;
-    static CMouvement createMouvement(void);
+    static CMouvement *createMouvement(void);
     inline int getGroupe(void) const { return groupe; }
     inline CMouvement::ERotate getSens(void) const { return sens; }
     inline bool getInverse(void) const { return inverse; }

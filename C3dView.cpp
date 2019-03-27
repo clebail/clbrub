@@ -71,7 +71,10 @@ void C3dView::paintGL() {
 //-----------------------------------------------------------------------------------------------
 void C3dView::setRubik(CRubik *rubik) {
     this->rubik = rubik;
-    updateGL();
+    if(rubik != nullptr) {
+        connect(rubik, SIGNAL(update()), this, SLOT(updateGL()));
+        updateGL();
+    }
 }
 //-----------------------------------------------------------------------------------------------
 void C3dView::wheelEvent(QWheelEvent * event) {

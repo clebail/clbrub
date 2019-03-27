@@ -1,7 +1,6 @@
 #ifndef CRUBIK_H
 #define CRUBIK_H
 
-#include <QThread>
 #include <QColor>
 #include <QList>
 #include <QGLWidget>
@@ -18,6 +17,7 @@
 #define ROTATE_STEP                 5
 
 class CRubik : public QObject {
+    Q_OBJECT
 public:
     typedef enum { crefRouge, crefOrange, crefBlue, crefVert, crefJaune, crefBlanc, crefBlancClb, crefBlack } EFace;
 
@@ -28,13 +28,15 @@ public:
     }SFace;
 
     CRubik(void);
-    CRubik(const QList<CMouvement>& mouvements);
+    CRubik(const QList<CMouvement *>& mouvements);
+    ~CRubik(void);
 
     const CRubik::SFace& getSubFace(int idCube, int idFace) const;
-    void rotate(int idRotateGroupe, CMouvement::ERotate rotateSens, bool inverse, int stepCount = ROTATE_STEP, unsigned int ts = 40, QGLWidget *render = nullptr);
-    void melange(QGLWidget *render = nullptr);
+    void melange(void);
     int getScore(void) const;
-    QList<CMouvement> solve(void);
+    QList<CMouvement *> solve(void);
+    void init(void);
+    void exec(QString cmd);
 private:
     typedef struct _SCube {
         SFace faces[NBFACE];
@@ -43,11 +45,13 @@ private:
 
     SCube cubes[NBCUBE];
     SCube *rGroupes[NBROTATEGROUPE][NBCUBEPARFACE];
-    QList<CMouvement> mouvements;
+    QList<CMouvement *> mouvements;
 
-    void init(void);
     void calculGroupes(void);
-    CMouvement createMouvement(void);
+    void rotate(int idRotateGroupe, CMouvement::ERotate rotateSens, bool inverse, int stepCount = ROTATE_STEP, unsigned int ts = 40);
+    void clearMouvements(void);
+signals:
+    void update(void);
 };
 
 #endif // CRUBIK_H

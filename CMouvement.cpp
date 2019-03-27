@@ -41,14 +41,14 @@ QList<CMouvement *> CMouvement::formString(QString str) {
     return getResult();
 }
 
-CMouvement CMouvement::createMouvement(void) {
+CMouvement *CMouvement::createMouvement(void) {
     int sens = rand() % 3;
     int face = rand() % RUBIKSIZE;
-    CMouvement mouvement;
+    CMouvement *mouvement = new CMouvement();
 
-    mouvement.groupe = face + sens * RUBIKSIZE;
-    mouvement.sens = static_cast<CMouvement::ERotate>(sens);
-    mouvement.inverse = rand() % 2 == 1;
+    mouvement->groupe = face + sens * RUBIKSIZE;
+    mouvement->sens = static_cast<CMouvement::ERotate>(sens);
+    mouvement->inverse = rand() % 2 == 1;
 
     return mouvement;
 }
