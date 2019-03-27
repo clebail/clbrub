@@ -45,22 +45,13 @@ void CRubik::melange(void) {
 }
 
 int CRubik::getScore(void) const {
-    int x, y, z, i, j;
+    int x, y, z;
     int score = 0;
 
-    for(z=i=0;z<RUBIKSIZE;z++) {
+    for(z=0;z<RUBIKSIZE;z++) {
         for(y=0;y<RUBIKSIZE;y++) {
-            for(x=0;x<RUBIKSIZE;x++,i++) {
-                for(j=0;j<NBFACE;j++) {
-                    const SCube *cube = &cubes[i];
-                    int xc = x - MARGIN;
-                    int yc = y - MARGIN;
-                    int zc = z - MARGIN;
-
-                    score += (xc != cube->xc ? 1 : 0);
-                    score += (yc != cube->yc ? 1 : 0);
-                    score += (zc != cube->zc ? 1 : 0);
-                }
+            for(x=0;x<RUBIKSIZE;x++) {
+                score += distance(x, y, z);
             }
         }
     }
@@ -114,9 +105,9 @@ void CRubik::init(void) {
                     }
 
                     cubes[i].faces[j].clb = (cubes[i].faces[j].colorFace == CRubik::crefBlanc && x == 1 && y == 2 && z == 1);
-                    cubes[i].xc = static_cast<int>(fX);
-                    cubes[i].yc = static_cast<int>(fY);
-                    cubes[i].zc = static_cast<int>(fZ);
+                    cubes[i].xc = cubes[i].xo = static_cast<int>(fX);
+                    cubes[i].yc = cubes[i].yo = static_cast<int>(fY);
+                    cubes[i].zc = cubes[i].zo = static_cast<int>(fZ);
                 }
             }
         }
@@ -135,6 +126,26 @@ void CRubik::exec(QString cmd) {
         mouvements.append(mvt);
         rotate(mvt->getGroupe(), mvt->getSens(), mvt->getInverse());
     }
+}
+
+int CRubik::distance(int x, int y, int z) const {
+    const SCube *cube = findCube(x, y, z);
+    int distance = 0;
+    int nbChange = 0;
+
+    nbChange += (cube->xc != cube->xo ? 1 : 0);
+    nbChange += (cube->yc != cube->yo ? 1 : 0);
+    nbChange += (cube->zc != cube->zo ? 1 : 0);
+
+    if(cube->isCoin()) {
+        distance = nbChange;
+    } else if(cube->isArete()) {
+        distance = nbChange <= 2 ? 1 : 2;
+    } else {
+        distance = 3 - nbChange;
+    }
+
+    return distance;
 }
 
 void CRubik::calculGroupes(void) {
@@ -239,6 +250,18 @@ void CRubik::clearMouvements(void) {
     }
 
     mouvements.clear();
+}
+
+CRubik::SCube * CRubik::findCube(int x, int y, int z) const {
+    int i;
+
+    for(i=0;i<NBCUBE;i++) {
+        if(cubes[i].xc == x - MARGIN && cubes[i].yc == y - MARGIN && cubes[i].zc == z - MARGIN) {
+            return const_cast<CRubik::SCube *>(&cubes[i]);
+        }
+    }
+
+    return nullptr;
 }
 
 

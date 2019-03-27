@@ -61,3 +61,7 @@ static int yylex(yy::CParser::semantic_type *yylval, CScanner &scanner) {
 QList<CMouvement *> getResult(void) {
     return result;
 }
+
+void clearResult(void) {
+    result.clear();
+}

@@ -5,6 +5,7 @@
 static QChar groupeMap[] = { 'F', 'S', 'B', 'D', 'E', 'U', 'L', 'M', 'R' };
 
 extern QList<CMouvement *> getResult();
+extern void clearResult(void);
 
 CMouvement::CMouvement() {
     groupe = 0;
@@ -35,7 +36,8 @@ QList<CMouvement *> CMouvement::formString(QString str) {
     std::istringstream iss(str.toStdString());
     CScanner scanner(&iss);
     yy::CParser parser(scanner);
-    QList<CMouvement *> result;
+
+    clearResult();
 
     parser.parse();
     return getResult();

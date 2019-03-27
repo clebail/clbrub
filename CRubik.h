@@ -37,10 +37,28 @@ public:
     QList<CMouvement *> solve(void);
     void init(void);
     void exec(QString cmd);
+    int distance(int x, int y, int z) const;
 private:
     typedef struct _SCube {
         SFace faces[NBFACE];
         int xc, yc, zc;
+        int xo, yo, zo;
+
+        bool isCoin(void) const {
+            return (abs(xc) + abs(yc) + abs(zc)) == 3;
+        }
+
+        bool isArete(void) const  {
+            return (abs(xc) + abs(yc) + abs(zc)) == 2;
+        }
+
+        bool isCentre(void) const  {
+            return !isCoin() && !isArete();
+        }
+
+        operator QString(void) const {
+            return "("+QString::number(xc)+", "+QString::number(yc)+", "+QString::number(zc)+") - ("+QString::number(xo)+", "+QString::number(yo)+", "+QString::number(zo)+")";
+        }
     }SCube;
 
     SCube cubes[NBCUBE];
@@ -50,6 +68,7 @@ private:
     void calculGroupes(void);
     void rotate(int idRotateGroupe, CMouvement::ERotate rotateSens, bool inverse, int stepCount = ROTATE_STEP, unsigned int ts = 40);
     void clearMouvements(void);
+    SCube * findCube(int x, int y, int z) const;
 signals:
     void update(void);
 };
