@@ -9,7 +9,7 @@ extern void clearResult(void);
 
 CMouvement::CMouvement() {
     groupe = 0;
-    sens = CMouvement::crrsX;
+    sens = CMouvement::cmedX;
     inverse = false;
 }
 
@@ -19,7 +19,7 @@ CMouvement::CMouvement(QChar type) {
         groupe++;
         Q_ASSERT(groupe < 9);
     }
-    sens = (groupe < 3 ? CMouvement::crrsX : (groupe < 6 ? CMouvement::crrsY : CMouvement::crrsZ));
+    sens = (groupe < 3 ? CMouvement::cmedX : (groupe < 6 ? CMouvement::cmedY : CMouvement::cmedZ));
     inverse = false;
 }
 
@@ -44,12 +44,12 @@ QList<CMouvement *> CMouvement::formString(QString str) {
 }
 
 CMouvement *CMouvement::createMouvement(void) {
-    int sens = rand() % 3;
+    int sens = rand() % DIMENSION;
     int face = rand() % RUBIKSIZE;
     CMouvement *mouvement = new CMouvement();
 
     mouvement->groupe = face + sens * RUBIKSIZE;
-    mouvement->sens = static_cast<CMouvement::ERotate>(sens);
+    mouvement->sens = static_cast<CMouvement::EDirection>(sens);
     mouvement->inverse = rand() % 2 == 1;
 
     return mouvement;

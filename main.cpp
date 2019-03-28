@@ -7,6 +7,8 @@ static PyObject * rubik_melange(PyObject *, PyObject *);
 static PyObject * rubik_init(PyObject *, PyObject *);
 static PyObject * rubik_exec(PyObject *, PyObject *);
 static PyObject * rubik_distance(PyObject *, PyObject *);
+static PyObject * rubik_lastmouvement(PyObject *, PyObject *);
+static PyObject * rubik_debug(PyObject *, PyObject *);
 PyMODINIT_FUNC PyInit_rubik(void);
 
 static CRubik *rubik = new CRubik();
@@ -15,6 +17,8 @@ static PyMethodDef RubikMethods[] = {
     {"init",  rubik_init, METH_VARARGS, "Ré-initialise le cube."},
     {"exec",  rubik_exec, METH_VARARGS, "Exécute une série de mouvements."},
     {"distance",  rubik_distance, METH_VARARGS, "Calcul la distance d'un cube avec son emplacement final."},
+    {"lastmouvement",  rubik_lastmouvement, METH_VARARGS, "Retourne le dernier mouvement."},
+    {"debug",  rubik_debug, METH_VARARGS, "Affiche les information d'un cube."},
     {nullptr, nullptr, 0, nullptr}
 };
 static struct PyModuleDef rubikmodule = {
@@ -52,8 +56,12 @@ int main(int argc, char *argv[]){
     return result;
 }
 
-PyObject * rubik_melange(PyObject *, PyObject *) {
-    rubik->melange();
+PyObject * rubik_melange(PyObject *, PyObject *args) {
+    int nb;
+
+    if(PyArg_ParseTuple(args, "i", &nb)) {
+        rubik->melange(nb);
+    }
 
     return Py_None;
 }
@@ -82,6 +90,22 @@ PyObject * rubik_distance(PyObject *, PyObject *args) {
     }
 
     return PyLong_FromLong(-1);
+}
+
+PyObject * rubik_lastmouvement(PyObject *, PyObject *) {
+    QString mvt = rubik->getLastMouvement();
+
+    return PyUnicode_FromString(mvt.toUtf8().data());
+}
+
+PyObject * rubik_debug(PyObject *, PyObject *args) {
+    int x, y, z;
+
+    if(PyArg_ParseTuple(args, "iii", &x, &y, &z)) {
+        rubik->printCubeInfo(x, y, z);
+    }
+
+    return Py_None;
 }
 
 PyMODINIT_FUNC PyInit_rubik(void) {

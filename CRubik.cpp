@@ -33,10 +33,10 @@ const CRubik::SFace& CRubik::getSubFace(int idCube, int idFace) const {
     return cubes[idCube].faces[idFace];
 }
 
-void CRubik::melange(void) {
+void CRubik::melange(int nb) {
     srand(static_cast<unsigned int>(time(nullptr)));
 
-    for(int i=0;i<50;i++) {
+    for(int i=0;i<nb;i++) {
         CMouvement *mouvement = CMouvement::createMouvement();
 
         mouvements.append(mouvement);
@@ -85,6 +85,14 @@ void CRubik::init(void) {
                     { { fX-UNIT, fY-UNIT, fZ-UNIT }, { fX+UNIT, fY-UNIT, fZ-UNIT }, { fX+UNIT, fY-UNIT, fZ+UNIT }, { fX-UNIT, fY-UNIT, fZ+UNIT } }, //bas
                     { { fX-UNIT, fY+UNIT, fZ+UNIT }, { fX+UNIT, fY+UNIT, fZ+UNIT }, { fX+UNIT, fY+UNIT, fZ-UNIT }, { fX-UNIT, fY+UNIT, fZ-UNIT } }  //haut
                 };
+
+                cubes[i].faces[0].origineOrientation = cubes[i].faces[1].origineOrientation = CMouvement::cmedX;
+                cubes[i].faces[2].origineOrientation = cubes[i].faces[3].origineOrientation = CMouvement::cmedY;
+                cubes[i].faces[4].origineOrientation = cubes[i].faces[5].origineOrientation = CMouvement::cmedZ;
+
+                cubes[i].faces[0].orientation = cubes[i].faces[1].orientation = CMouvement::cmedX;
+                cubes[i].faces[2].orientation = cubes[i].faces[3].orientation = CMouvement::cmedY;
+                cubes[i].faces[4].orientation = cubes[i].faces[5].orientation = CMouvement::cmedZ;
 
                 for(j=0;j<NBFACE;j++) {
                     CRubik::EFace face = static_cast<CRubik::EFace>(j);
@@ -139,13 +147,49 @@ int CRubik::distance(int x, int y, int z) const {
 
     if(cube->isCoin()) {
         distance = nbChange;
+        if(!cube->isOriented()) {
+
+        }
     } else if(cube->isArete()) {
         distance = nbChange <= 2 ? 1 : 2;
+        if(!cube->isOriented()) {
+            distance += 3;
+        }
     } else {
         distance = 3 - nbChange;
     }
 
     return distance;
+}
+
+void CRubik::printCubeInfo(int x, int y, int z) const {
+    const SCube *cube = findCube(x, y, z);
+    int i;
+
+    qDebug() << "Position originale (" << cube->xo << "," << cube->yo << "," << cube->zo << ")";
+    qDebug() << "Position actuelle (" << cube->xc << "," << cube->yc << "," << cube->zc << ")";
+    qDebug() << "Orientation des faces";
+
+    for(i=0;i<NBFACE;i++) {
+        const SFace *face = &cube->faces[i];
+
+        if(face->colorFace != CRubik::crefBlack) {
+            QString faceNames[] = { "Rouge", "Orange", "Blue", "Vert", "Jaune", "Blanc", "Blanc" };
+            QString orientationNames[] = { "X" , "Y", "Z" };
+
+            qDebug() << "Couleur" << faceNames[face->colorFace] << "Orientation originale" << orientationNames[face->origineOrientation] << "Orientation actuelle" << orientationNames[face->orientation];
+        }
+    }
+}
+
+QString CRubik::getLastMouvement(void) const {
+    if(mouvements.size() != 0) {
+        CMouvement *mvt = mouvements.last();
+
+        return *mvt;
+    }
+
+    return "";
 }
 
 void CRubik::calculGroupes(void) {
@@ -171,7 +215,7 @@ void CRubik::calculGroupes(void) {
     }
 }
 
-void CRubik::rotate(int idRotateGroupe, CMouvement::ERotate rotateSens, bool inverse, int stepCount, unsigned int ts) {
+void CRubik::rotate(int idRotateGroupe, CMouvement::EDirection rotateSens, bool inverse, int stepCount, unsigned int ts) {
     int step;
     int coef = (inverse ? -1 : 1);
     double angle = static_cast<double>(90/stepCount) * coef;
@@ -192,15 +236,15 @@ void CRubik::rotate(int idRotateGroupe, CMouvement::ERotate rotateSens, bool inv
                     int zc = cube->zc;
 
                     switch(rotateSens) {
-                    case CMouvement::crrsX:
+                    case CMouvement::cmedX:
                         cube->yc = static_cast<int>(zc * coef);
                         cube->zc = static_cast<int>(-yc * coef);
                         break;
-                    case CMouvement::crrsY:
+                    case CMouvement::cmedY:
                         cube->xc = static_cast<int>(zc * coef);
                         cube->zc = static_cast<int>(-xc * coef);
                         break;
-                    case CMouvement::crrsZ:
+                    case CMouvement::cmedZ:
                         cube->xc = static_cast<int>(-yc * coef);
                         cube->yc = static_cast<int>(xc * coef);
                         break;
@@ -217,17 +261,43 @@ void CRubik::rotate(int idRotateGroupe, CMouvement::ERotate rotateSens, bool inv
                         float z = cube->faces[j].coords[k][2];
 
                         switch(rotateSens) {
-                        case CMouvement::crrsX:
+                        case CMouvement::cmedX:
                             cube->faces[j].coords[k][1] = y*c+z*s;
                             cube->faces[j].coords[k][2] = z*c-y*s;
                             break;
-                        case CMouvement::crrsY:
+                        case CMouvement::cmedY:
                             cube->faces[j].coords[k][0] = x*c+z*s;
                             cube->faces[j].coords[k][2] = z*c-x*s;
                             break;
-                        case CMouvement::crrsZ:
+                        case CMouvement::cmedZ:
                             cube->faces[j].coords[k][0] = x*c-y*s;
                             cube->faces[j].coords[k][1] = y*c+x*s;
+                            break;
+                        }
+                    }
+
+                    if(step == 0) {
+                        switch(rotateSens) {
+                        case CMouvement::cmedX:
+                            if(cube->faces[j].orientation == CMouvement::cmedY) {
+                                cube->faces[j].orientation = CMouvement::cmedZ;
+                            } else if(cube->faces[j].orientation == CMouvement::cmedZ) {
+                                cube->faces[j].orientation = CMouvement::cmedY;
+                            }
+                            break;
+                        case CMouvement::cmedY:
+                            if(cube->faces[j].orientation == CMouvement::cmedX) {
+                                cube->faces[j].orientation = CMouvement::cmedZ;
+                            } else if(cube->faces[j].orientation == CMouvement::cmedZ) {
+                                cube->faces[j].orientation = CMouvement::cmedX;
+                            }
+                            break;
+                        case CMouvement::cmedZ:
+                            if(cube->faces[j].orientation == CMouvement::cmedX) {
+                                cube->faces[j].orientation = CMouvement::cmedY;
+                            } else if(cube->faces[j].orientation == CMouvement::cmedY) {
+                                cube->faces[j].orientation = CMouvement::cmedX;
+                            }
                             break;
                         }
                     }

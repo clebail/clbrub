@@ -6,7 +6,6 @@
 #include <QGLWidget>
 #include "CMouvement.h"
 
-#define DIMENSION                   3
 #define NBSOMMET                    4
 #define NBFACE                      6
 #define MARGIN                      (RUBIKSIZE / 2)
@@ -25,6 +24,8 @@ public:
         float coords[NBSOMMET][DIMENSION];
         int clb;
         CRubik::EFace colorFace;
+        CMouvement::EDirection orientation;
+        CMouvement::EDirection origineOrientation;
     }SFace;
 
     CRubik(void);
@@ -32,12 +33,14 @@ public:
     ~CRubik(void);
 
     const CRubik::SFace& getSubFace(int idCube, int idFace) const;
-    void melange(void);
+    void melange(int nb = 50);
     int getScore(void) const;
     QList<CMouvement *> solve(void);
     void init(void);
     void exec(QString cmd);
     int distance(int x, int y, int z) const;
+    void printCubeInfo(int x, int y, int z) const;
+    QString getLastMouvement(void) const;
 private:
     typedef struct _SCube {
         SFace faces[NBFACE];
@@ -56,6 +59,16 @@ private:
             return !isCoin() && !isArete();
         }
 
+        bool isOriented(void) const {
+            for(int i=0;i<NBFACE;i++) {
+                if(faces[i].orientation != faces[i].origineOrientation) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         operator QString(void) const {
             return "("+QString::number(xc)+", "+QString::number(yc)+", "+QString::number(zc)+") - ("+QString::number(xo)+", "+QString::number(yo)+", "+QString::number(zo)+")";
         }
@@ -66,7 +79,7 @@ private:
     QList<CMouvement *> mouvements;
 
     void calculGroupes(void);
-    void rotate(int idRotateGroupe, CMouvement::ERotate rotateSens, bool inverse, int stepCount = ROTATE_STEP, unsigned int ts = 40);
+    void rotate(int idRotateGroupe, CMouvement::EDirection rotateSens, bool inverse, int stepCount = ROTATE_STEP, unsigned int ts = 40);
     void clearMouvements(void);
     SCube * findCube(int x, int y, int z) const;
 signals:

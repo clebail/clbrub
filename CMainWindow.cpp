@@ -6,7 +6,7 @@ CMainWindow::CMainWindow(CRubik *rubik, QWidget *parent) : QMainWindow(parent) {
     setupUi(this);
     this->rubik = rubik;
 
-    teScript->setText("import rubik\nrubik.melange()");
+    teScript->setText("import rubik\nrubik.melange(50)");
 
     w3d->setRubik(rubik);
 
@@ -15,8 +15,8 @@ CMainWindow::CMainWindow(CRubik *rubik, QWidget *parent) : QMainWindow(parent) {
 
 void CMainWindow::runScript(const char* script) {
     emit(enablePbRun(false));
-   PyRun_SimpleString(script);
-   emit(enablePbRun(true));
+    PyRun_SimpleString(script);
+    emit(enablePbRun(true));
 }
 
 void CMainWindow::on_pbRun_clicked() {
