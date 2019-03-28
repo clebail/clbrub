@@ -9,12 +9,22 @@ CMainWindow::CMainWindow(CRubik *rubik, QWidget *parent) : QMainWindow(parent) {
     teScript->setText("import rubik\nrubik.melange()");
 
     w3d->setRubik(rubik);
+
+    connect(this, SIGNAL(enablePbRun(bool)), this, SLOT(onEnablePbRun(bool)));
 }
 
 void CMainWindow::runScript(const char* script) {
+    emit(enablePbRun(false));
    PyRun_SimpleString(script);
+   emit(enablePbRun(true));
 }
 
 void CMainWindow::on_pbRun_clicked() {
-    QFuture<void> f = QtConcurrent::run(this, &CMainWindow::runScript, teScript->toPlainText().toLatin1().data());
+    char *script = teScript->toPlainText().toLatin1().data();
+
+    QtConcurrent::run(this, &CMainWindow::runScript, script);
+}
+
+void CMainWindow::onEnablePbRun(bool enable) {
+     pbRun->setEnabled(enable);
 }

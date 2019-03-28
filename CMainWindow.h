@@ -14,6 +14,9 @@ private:
     void runScript(const char* script);
 private slots:
     void on_pbRun_clicked();
+    void onEnablePbRun(bool enable);
+signals:
+    void enablePbRun(bool enable);
 };
 
 #endif // CMAINWINDOW_H

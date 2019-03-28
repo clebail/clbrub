@@ -1,4 +1,5 @@
 #include <Python.h>
+#include <QtDebug>
 #include <QApplication>
 #include "CMainWindow.h"
 
@@ -23,16 +24,20 @@ static struct PyModuleDef rubikmodule = {
 int main(int argc, char *argv[]){
     QApplication a(argc, argv);
     CMainWindow w(rubik);
-    wchar_t *program = Py_DecodeLocale(argv[0], nullptr);
     int result = 0;
 
+#if PY_VERSION_HEX >= 0x03070300
+    wchar_t *program = Py_DecodeLocale(argv[0], nullptr);
     if (program == nullptr) {
         fprintf(stderr, "Erreur: impossible de décoder argv[0]\n");
         return 1;
     }
+    Py_SetProgramName(program);
+#else
+    Py_SetProgramName(argv[0]);
+#endif
 
     PyImport_AppendInittab("rubik", PyInit_rubik);
-    Py_SetProgramName(program);
     Py_Initialize();
     PyImport_ImportModule("rubik");
 
@@ -40,7 +45,9 @@ int main(int argc, char *argv[]){
 
     result = a.exec();
 
+#if PY_VERSION_HEX >= 0x03070300
     PyMem_RawFree(program);
+#endif
 
     return result;
 }
