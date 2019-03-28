@@ -57,10 +57,10 @@ int main(int argc, char *argv[]){
 }
 
 PyObject * rubik_melange(PyObject *, PyObject *args) {
-    int nb;
+    int nb, p;
 
-    if(PyArg_ParseTuple(args, "i", &nb)) {
-        rubik->melange(nb);
+    if(PyArg_ParseTuple(args, "ip", &nb, &p)) {
+        rubik->melange(nb, p == 1);
     }
 
     return Py_None;

@@ -33,14 +33,18 @@ const CRubik::SFace& CRubik::getSubFace(int idCube, int idFace) const {
     return cubes[idCube].faces[idFace];
 }
 
-void CRubik::melange(int nb) {
+void CRubik::melange(int nb, bool anim) {
     srand(static_cast<unsigned int>(time(nullptr)));
 
     for(int i=0;i<nb;i++) {
         CMouvement *mouvement = CMouvement::createMouvement();
 
         mouvements.append(mouvement);
-        rotate(mouvement->getGroupe(), mouvement->getSens(), mouvement->getInverse(), ROTATE_STEP, 20);
+        if(anim) {
+            rotate(mouvement->getGroupe(), mouvement->getSens(), mouvement->getInverse(), ROTATE_STEP, 20);
+        } else {
+            rotate(mouvement->getGroupe(), mouvement->getSens(), mouvement->getInverse(), 1, 0);
+        }
     }
 }
 
@@ -139,24 +143,26 @@ void CRubik::exec(QString cmd) {
 int CRubik::distance(int x, int y, int z) const {
     const SCube *cube = findCube(x, y, z);
     int distance = 0;
-    int nbChange = 0;
+    if(x != 1 || y != 1 || z != 1) {
+        int nbChange = 0;
 
-    nbChange += (cube->xc != cube->xo ? 1 : 0);
-    nbChange += (cube->yc != cube->yo ? 1 : 0);
-    nbChange += (cube->zc != cube->zo ? 1 : 0);
+        nbChange += (cube->xc != cube->xo ? 1 : 0);
+        nbChange += (cube->yc != cube->yo ? 1 : 0);
+        nbChange += (cube->zc != cube->zo ? 1 : 0);
 
-    if(cube->isCoin()) {
-        distance = nbChange;
-        if(!cube->isOriented()) {
+        if(cube->isCoin()) {
+            distance = nbChange;
+            if(!cube->isOriented()) {
 
+            }
+        } else if(cube->isArete()) {
+            distance = nbChange <= 2 ? 1 : 2;
+            if(!cube->isOriented()) {
+                distance += 3;
+            }
+        } else {
+            distance = 3 - nbChange;
         }
-    } else if(cube->isArete()) {
-        distance = nbChange <= 2 ? 1 : 2;
-        if(!cube->isOriented()) {
-            distance += 3;
-        }
-    } else {
-        distance = 3 - nbChange;
     }
 
     return distance;

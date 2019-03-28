@@ -33,7 +33,7 @@ public:
     ~CRubik(void);
 
     const CRubik::SFace& getSubFace(int idCube, int idFace) const;
-    void melange(int nb = 50);
+    void melange(int nb = 50, bool anim = true);
     int getScore(void) const;
     QList<CMouvement *> solve(void);
     void init(void);
