@@ -9,7 +9,7 @@
 #define TAILLE_POPULATION                   100
 #define TAILLE_GENOME                       25
 
-CRubik::CRubik(void) {
+CRubik::CRubik(void) {   
     init();
 }
 
@@ -34,8 +34,6 @@ const CRubik::SFace& CRubik::getSubFace(int idCube, int idFace) const {
 }
 
 void CRubik::melange(int nb, bool anim) {
-    srand(static_cast<unsigned int>(time(nullptr)));
-
     for(int i=0;i<nb;i++) {
         CMouvement *mouvement = CMouvement::createMouvement();
 
@@ -72,7 +70,7 @@ QList<CMouvement *> CRubik::solve(void) {
 void CRubik::init(void) {
     int x, y, z, i, j;
 
-    clearMouvements();
+    //clearMouvements();
 
     for(z=i=0;z<RUBIKSIZE;z++) {
         for(y=0;y<RUBIKSIZE;y++) {
@@ -321,11 +319,9 @@ void CRubik::rotate(int idRotateGroupe, CMouvement::EDirection rotateSens, bool 
 }
 
 void CRubik::clearMouvements(void) {
-    for(int i=0;i<mouvements.size();i++) {
-        delete mouvements.at(i);
+    while(mouvements.size()) {
+        delete mouvements.takeFirst();
     }
-
-    mouvements.clear();
 }
 
 CRubik::SCube * CRubik::findCube(int x, int y, int z) const {

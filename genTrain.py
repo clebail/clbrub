@@ -1,7 +1,7 @@
 import rubik
 from random import randint
 
-for i in range (10):
+for i in range (50000):
 	rubik.init()
 	rubik.melange(randint(1, 9), False)
 

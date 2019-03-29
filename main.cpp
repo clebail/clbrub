@@ -9,7 +9,7 @@ static PyObject * rubik_exec(PyObject *, PyObject *);
 static PyObject * rubik_distance(PyObject *, PyObject *);
 static PyObject * rubik_lastmouvement(PyObject *, PyObject *);
 static PyObject * rubik_debug(PyObject *, PyObject *);
-PyMODINIT_FUNC PyInit_rubik(void);
+static PyObject * PyInit_rubik(void);
 
 static CRubik *rubik = new CRubik();
 static PyMethodDef RubikMethods[] = {
@@ -30,6 +30,8 @@ int main(int argc, char *argv[]){
     CMainWindow w(rubik);
     int result = 0;
 
+    srand(static_cast<unsigned int>(time(nullptr)));
+
 #if PY_VERSION_HEX >= 0x03070300
     wchar_t *program = Py_DecodeLocale(argv[0], nullptr);
     if (program == nullptr) {
@@ -41,7 +43,7 @@ int main(int argc, char *argv[]){
     Py_SetProgramName(argv[0]);
 #endif
 
-    PyImport_AppendInittab("rubik", PyInit_rubik);
+    PyImport_AppendInittab("rubik", &PyInit_rubik);
     Py_Initialize();
     PyImport_ImportModule("rubik");
 
@@ -59,9 +61,13 @@ int main(int argc, char *argv[]){
 PyObject * rubik_melange(PyObject *, PyObject *args) {
     int nb, p;
 
-    if(PyArg_ParseTuple(args, "ip", &nb, &p)) {
-        rubik->melange(nb, p == 1);
+    if(!PyArg_ParseTuple(args, "ip", &nb, &p)) {
+        return nullptr;
     }
+
+    rubik->melange(nb, p == 1);
+
+    Py_INCREF(Py_None);
 
     return Py_None;
 }
@@ -69,15 +75,21 @@ PyObject * rubik_melange(PyObject *, PyObject *args) {
 PyObject * rubik_init(PyObject *, PyObject *) {
     rubik->init();
 
+    Py_INCREF(Py_None);
+
     return Py_None;
 }
 
 PyObject * rubik_exec(PyObject *, PyObject *args) {
     char *cmd;
 
-    if(PyArg_ParseTuple(args, "s", &cmd)) {
-        rubik->exec(QString(cmd));
+    if(!PyArg_ParseTuple(args, "s", &cmd)) {
+        return nullptr;
     }
+
+    rubik->exec(QString(cmd));
+
+    Py_INCREF(Py_None);
 
     return Py_None;
 }
@@ -85,11 +97,11 @@ PyObject * rubik_exec(PyObject *, PyObject *args) {
 PyObject * rubik_distance(PyObject *, PyObject *args) {
     int x, y, z;
 
-    if(PyArg_ParseTuple(args, "iii", &x, &y, &z)) {
-        return PyLong_FromLong(rubik->distance(x, y, z));
+    if(!PyArg_ParseTuple(args, "iii", &x, &y, &z)) {
+        return nullptr;
     }
 
-    return PyLong_FromLong(-1);
+    return PyLong_FromLong(rubik->distance(x, y, z));
 }
 
 PyObject * rubik_lastmouvement(PyObject *, PyObject *) {
@@ -101,13 +113,17 @@ PyObject * rubik_lastmouvement(PyObject *, PyObject *) {
 PyObject * rubik_debug(PyObject *, PyObject *args) {
     int x, y, z;
 
-    if(PyArg_ParseTuple(args, "iii", &x, &y, &z)) {
-        rubik->printCubeInfo(x, y, z);
+    if(!PyArg_ParseTuple(args, "iii", &x, &y, &z)) {
+        return nullptr;
     }
+
+    rubik->printCubeInfo(x, y, z);
+
+    Py_INCREF(Py_None);
 
     return Py_None;
 }
 
-PyMODINIT_FUNC PyInit_rubik(void) {
+PyObject * PyInit_rubik(void) {
     return PyModule_Create(&rubikmodule);
 }
