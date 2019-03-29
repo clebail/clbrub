@@ -8,6 +8,7 @@ static PyObject * rubik_init(PyObject *, PyObject *);
 static PyObject * rubik_exec(PyObject *, PyObject *);
 static PyObject * rubik_distance(PyObject *, PyObject *);
 static PyObject * rubik_lastmouvement(PyObject *, PyObject *);
+static PyObject * rubik_score(PyObject *, PyObject *);
 static PyObject * rubik_debug(PyObject *, PyObject *);
 static PyObject * PyInit_rubik(void);
 
@@ -18,6 +19,7 @@ static PyMethodDef RubikMethods[] = {
     {"exec",  rubik_exec, METH_VARARGS, "Exécute une série de mouvements."},
     {"distance",  rubik_distance, METH_VARARGS, "Calcul la distance d'un cube avec son emplacement final."},
     {"lastmouvement",  rubik_lastmouvement, METH_VARARGS, "Retourne le dernier mouvement."},
+    {"score",  rubik_score, METH_VARARGS, "Retourne le score."},
     {"debug",  rubik_debug, METH_VARARGS, "Affiche les information d'un cube."},
     {nullptr, nullptr, 0, nullptr}
 };
@@ -108,6 +110,10 @@ PyObject * rubik_lastmouvement(PyObject *, PyObject *) {
     QString mvt = rubik->getLastMouvement();
 
     return PyUnicode_FromString(mvt.toUtf8().data());
+}
+
+PyObject * rubik_score(PyObject *, PyObject *) {
+    return PyLong_FromLong(rubik->getScore());
 }
 
 PyObject * rubik_debug(PyObject *, PyObject *args) {

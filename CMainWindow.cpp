@@ -1,5 +1,7 @@
 #include <Python.h>
 #include <QtConcurrent>
+#include <string>
+#include <string.h>
 #include "CMainWindow.h"
 
 CMainWindow::CMainWindow(CRubik *rubik, QWidget *parent) : QMainWindow(parent) {
@@ -8,21 +10,33 @@ CMainWindow::CMainWindow(CRubik *rubik, QWidget *parent) : QMainWindow(parent) {
 
     teScript->setText("import rubik\nrubik.melange(50)");
 
+    lexerPY = new QsciLexerPython();
+    teScript->setLexer(lexerPY);
+    teScript->setMarginLineNumbers(1, true);
+    teScript->setMarginWidth(1, 30);
+    teScript->setMarginsFont(QFont("Hack", 8));
+
     w3d->setRubik(rubik);
 
     connect(this, SIGNAL(enablePbRun(bool)), this, SLOT(onEnablePbRun(bool)));
 }
 
-void CMainWindow::runScript(const char* script) {
+CMainWindow::~CMainWindow(void) {
+    delete lexerPY;
+}
+
+void CMainWindow::runScript(QString script) {
+    std::string stdScript = script.toStdString();
+    char *buffer = new char[stdScript.size()+1];
+    strcpy(buffer, stdScript.c_str());
+
     emit(enablePbRun(false));
-    PyRun_SimpleString(script);
+    PyRun_SimpleString(buffer);
     emit(enablePbRun(true));
 }
 
 void CMainWindow::on_pbRun_clicked() {
-    char *script = teScript->toPlainText().toLatin1().data();
-
-    QtConcurrent::run(this, &CMainWindow::runScript, script);
+    QtConcurrent::run(this, &CMainWindow::runScript, teScript->text());
 }
 
 void CMainWindow::onEnablePbRun(bool enable) {
