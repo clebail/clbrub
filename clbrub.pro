@@ -82,3 +82,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 RESOURCES += \
         clbrub.qrc
+
+DISTFILES += \
+    train.py \
+    resolvpy.py

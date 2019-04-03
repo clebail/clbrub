@@ -151,7 +151,7 @@ int CRubik::distance(int x, int y, int z) const {
         if(cube->isCoin()) {
             distance = nbChange;
             if(!cube->isOriented()) {
-
+                distance += 3;
             }
         } else if(cube->isArete()) {
             distance = nbChange <= 2 ? 1 : 2;
