@@ -196,6 +196,21 @@ QString CRubik::getLastMouvement(void) const {
     return "";
 }
 
+CRubik::EFace  CRubik::getFace(int x, int y, int z, CMouvement::EDirection direction) {
+    SCube *cube = findCube(x, y, z);
+    int i;
+
+    for(i=0;i<NBFACE;i++) {
+        SFace *face = &cube->faces[i];
+
+        if(face->orientation == direction && face->colorFace != CRubik::crefBlack) {
+            return face->colorFace == CRubik::crefBlancClb ? CRubik::crefBlanc : face->colorFace;
+        }
+    }
+
+    return CRubik::crefBlack;
+}
+
 void CRubik::calculGroupes(void) {
     int i;
     SCube **groupex;

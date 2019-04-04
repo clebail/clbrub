@@ -13,7 +13,7 @@ json_file.close()
 model = model_from_json(loaded_model_json)
 model.load_weights("model.h5")
 
-model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+model.compile(loss='cosine_proximity', optimizer='adam', metrics=['accuracy'])
 
 rubik.init()
 rubik.melange(50, False)

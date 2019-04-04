@@ -41,6 +41,7 @@ public:
     int distance(int x, int y, int z) const;
     void printCubeInfo(int x, int y, int z) const;
     QString getLastMouvement(void) const;
+    CRubik::EFace getFace(int x, int y, int z, CMouvement::EDirection direction);
 private:
     typedef struct _SCube {
         SFace faces[NBFACE];

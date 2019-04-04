@@ -70,14 +70,16 @@ SOURCES += \
         CMainWindow.cpp \
         C3dView.cpp \
         CRubik.cpp \
-        CMouvement.cpp
+        CMouvement.cpp \
+    CMapView.cpp
 
 HEADERS += \
         CMainWindow.h \
         C3dView.h \
         CRubik.h \
         CMouvement.h \
-        CScanner.h
+        CScanner.h \
+    CMapView.h
 
 FORMS += \
         CMainWindow.ui
