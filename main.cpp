@@ -41,8 +41,6 @@ int main(int argc, char *argv[]){
         return 1;
     }
     Py_SetProgramName(program);
-#else
-    Py_SetProgramName(argv[0]);
 #endif
 
     PyImport_AppendInittab("rubik", &PyInit_rubik);

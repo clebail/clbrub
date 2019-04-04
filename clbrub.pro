@@ -8,11 +8,14 @@ QT       += core gui opengl concurrent
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
+load(configure)
+qtCompileTest(qscintilla2)
+qtCompileTest(qscintilla2_deb8)
+
 TARGET = clbrub
 TEMPLATE = app
 CONFIG += link_pkgconfig
 PKGCONFIG += python3
-LIBS += -lqscintilla2_qt5
 
 # The following define makes your compiler emit warnings if you use
 # any feature of Qt which has been marked as deprecated (the exact warnings
@@ -25,7 +28,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
-CONFIG += c++11 debug
+CONFIG += recheck c++11 debug
 
 FLEXSOURCES = mouvements.l
 BISONSOURCES = mouvements.y
