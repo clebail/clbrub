@@ -37,6 +37,8 @@ while rubik.score != 0:
             id = i
             max = p[i]
 
+    print (str(id)+" "+mvt[id])
+
     rubik.exec(mvt[id])
 
     print (mvt[id])

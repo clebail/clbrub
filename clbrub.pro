@@ -8,16 +8,18 @@ QT       += core gui opengl concurrent
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-CONFIG += recheck
-
-load(configure)
-qtCompileTest(qscintilla2)
-qtCompileTest(qscintilla2_deb8)
-
 TARGET = clbrub
 TEMPLATE = app
 CONFIG += link_pkgconfig
 PKGCONFIG += python3
+
+configA {
+    LIBS += -lqscintilla2_qt5
+}
+
+configB {
+    LIBS += -lqt5qscintilla2
+}
 
 # The following define makes your compiler emit warnings if you use
 # any feature of Qt which has been marked as deprecated (the exact warnings
