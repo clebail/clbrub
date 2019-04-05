@@ -35,7 +35,7 @@ void CMapView::paintEvent(QPaintEvent *) {
                 painter.setBrush(Qt::white);
 
                 if((j >= RUBIKSIZE && j < RB2) || (i >= RUBIKSIZE && i < RB2)) {
-                    if(i < RUBIKSIZE) { //Face 1
+                    if(i < RUBIKSIZE) {
                         x = 2;
                         y = i;
                         z = j - RUBIKSIZE;

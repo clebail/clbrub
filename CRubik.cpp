@@ -70,7 +70,7 @@ QList<CMouvement *> CRubik::solve(void) {
 void CRubik::init(void) {
     int x, y, z, i, j;
 
-    //clearMouvements();
+    clearMouvements();
 
     for(z=i=0;z<RUBIKSIZE;z++) {
         for(y=0;y<RUBIKSIZE;y++) {
@@ -141,25 +141,28 @@ void CRubik::exec(QString cmd) {
 int CRubik::distance(int x, int y, int z) const {
     const SCube *cube = findCube(x, y, z);
     int distance = 0;
-    if(x != 1 || y != 1 || z != 1) {
-        int nbChange = 0;
 
-        nbChange += (cube->xc != cube->xo ? 1 : 0);
-        nbChange += (cube->yc != cube->yo ? 1 : 0);
-        nbChange += (cube->zc != cube->zo ? 1 : 0);
+    if(cube != nullptr) {
+        if(x != 1 || y != 1 || z != 1) {
+            int nbChange = 0;
 
-        if(cube->isCoin()) {
-            distance = nbChange;
-            if(!cube->isOriented()) {
-                distance += 3;
+            nbChange += (cube->xc != cube->xo ? 1 : 0);
+            nbChange += (cube->yc != cube->yo ? 1 : 0);
+            nbChange += (cube->zc != cube->zo ? 1 : 0);
+
+            if(cube->isCoin()) {
+                distance = nbChange;
+                if(!cube->isOriented()) {
+                    distance += 3;
+                }
+            } else if(cube->isArete()) {
+                distance = nbChange <= 2 ? 1 : 2;
+                if(!cube->isOriented()) {
+                    distance += 3;
+                }
+            } else {
+                distance = 3 - nbChange;
             }
-        } else if(cube->isArete()) {
-            distance = nbChange <= 2 ? 1 : 2;
-            if(!cube->isOriented()) {
-                distance += 3;
-            }
-        } else {
-            distance = 3 - nbChange;
         }
     }
 
@@ -168,20 +171,23 @@ int CRubik::distance(int x, int y, int z) const {
 
 void CRubik::printCubeInfo(int x, int y, int z) const {
     const SCube *cube = findCube(x, y, z);
-    int i;
 
-    qDebug() << "Position originale (" << cube->xo << "," << cube->yo << "," << cube->zo << ")";
-    qDebug() << "Position actuelle (" << cube->xc << "," << cube->yc << "," << cube->zc << ")";
-    qDebug() << "Orientation des faces";
+    if(cube != nullptr) {
+        int i;
 
-    for(i=0;i<NBFACE;i++) {
-        const SFace *face = &cube->faces[i];
+        qDebug() << "Position originale (" << cube->xo << "," << cube->yo << "," << cube->zo << ")";
+        qDebug() << "Position actuelle (" << cube->xc << "," << cube->yc << "," << cube->zc << ")";
+        qDebug() << "Orientation des faces";
 
-        if(face->colorFace != CRubik::crefBlack) {
-            QString faceNames[] = { "Rouge", "Orange", "Blue", "Vert", "Jaune", "Blanc", "Blanc" };
-            QString orientationNames[] = { "X" , "Y", "Z" };
+        for(i=0;i<NBFACE;i++) {
+            const SFace *face = &cube->faces[i];
 
-            qDebug() << "Couleur" << faceNames[face->colorFace] << "Orientation originale" << orientationNames[face->origineOrientation] << "Orientation actuelle" << orientationNames[face->orientation];
+            if(face->colorFace != CRubik::crefBlack) {
+                QString faceNames[] = { "Rouge", "Orange", "Blue", "Vert", "Jaune", "Blanc", "Blanc" };
+                QString orientationNames[] = { "X" , "Y", "Z" };
+
+                qDebug() << "Couleur" << faceNames[face->colorFace] << "Orientation originale" << orientationNames[face->origineOrientation] << "Orientation actuelle" << orientationNames[face->orientation];
+            }
         }
     }
 }
@@ -198,13 +204,16 @@ QString CRubik::getLastMouvement(void) const {
 
 CRubik::EFace CRubik::getFace(int x, int y, int z, CMouvement::EDirection direction) const {
     SCube *cube = findCube(x, y, z);
-    int i;
 
-    for(i=0;i<NBFACE;i++) {
-        SFace *face = &cube->faces[i];
+    if(cube != nullptr) {
+        int i;
 
-        if(face->orientation == direction && face->colorFace != CRubik::crefBlack) {
-            return face->colorFace == CRubik::crefBlancClb ? CRubik::crefBlanc : face->colorFace;
+        for(i=0;i<NBFACE;i++) {
+            SFace *face = &cube->faces[i];
+
+            if(face->orientation == direction && face->colorFace != CRubik::crefBlack) {
+                return face->colorFace == CRubik::crefBlancClb ? CRubik::crefBlanc : face->colorFace;
+            }
         }
     }
 
