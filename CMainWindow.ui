@@ -44,7 +44,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QWidget" name="wMap" native="true">
+        <widget class="CMapView" name="wMap" native="true">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
            <horstretch>0</horstretch>
@@ -127,6 +127,12 @@
    <class>C3dView</class>
    <extends>QWidget</extends>
    <header>C3dView.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>CMapView</class>
+   <extends>QWidget</extends>
+   <header>CMapView.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

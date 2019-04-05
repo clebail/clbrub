@@ -196,7 +196,7 @@ QString CRubik::getLastMouvement(void) const {
     return "";
 }
 
-CRubik::EFace  CRubik::getFace(int x, int y, int z, CMouvement::EDirection direction) {
+CRubik::EFace CRubik::getFace(int x, int y, int z, CMouvement::EDirection direction) const {
     SCube *cube = findCube(x, y, z);
     int i;
 
@@ -209,6 +209,26 @@ CRubik::EFace  CRubik::getFace(int x, int y, int z, CMouvement::EDirection direc
     }
 
     return CRubik::crefBlack;
+}
+
+QColor CRubik::fromEFace(CRubik::EFace colorFace) {
+    switch(colorFace) {
+    case CRubik::crefRouge:
+        return QColor(0xb7, 0x12, 0x34);
+    case CRubik::crefOrange:
+        return QColor(0xff, 0x58, 0);
+    case CRubik::crefBlue:
+        return QColor(0, 0x46, 0xad);
+    case CRubik::crefVert:
+        return QColor(0, 0x9b, 0x48);
+    case CRubik::crefJaune:
+        return QColor(0xff, 0xd5, 0);
+    case CRubik::crefBlanc:
+    case CRubik::crefBlancClb:
+        return Qt::white;
+    default:
+        return Qt::black;
+    }
 }
 
 void CRubik::calculGroupes(void) {
@@ -274,7 +294,6 @@ void CRubik::rotate(int idRotateGroupe, CMouvement::EDirection rotateSens, bool 
                     int k;
 
                     for(k=0;k<NBSOMMET;k++) {
-
                         float x = cube->faces[j].coords[k][0];
                         float y = cube->faces[j].coords[k][1];
                         float z = cube->faces[j].coords[k][2];
@@ -306,16 +325,16 @@ void CRubik::rotate(int idRotateGroupe, CMouvement::EDirection rotateSens, bool 
                             break;
                         case CMouvement::cmedY:
                             if(cube->faces[j].orientation == CMouvement::cmedX) {
-                                cube->faces[j].orientation = CMouvement::cmedZ;
-                            } else if(cube->faces[j].orientation == CMouvement::cmedZ) {
+                                cube->faces[j].orientation = CMouvement::cmedY;
+                            } else if(cube->faces[j].orientation == CMouvement::cmedY) {
                                 cube->faces[j].orientation = CMouvement::cmedX;
                             }
                             break;
                         case CMouvement::cmedZ:
-                            if(cube->faces[j].orientation == CMouvement::cmedX) {
-                                cube->faces[j].orientation = CMouvement::cmedY;
-                            } else if(cube->faces[j].orientation == CMouvement::cmedY) {
+                            if(cube->faces[j].orientation == CMouvement::cmedZ) {
                                 cube->faces[j].orientation = CMouvement::cmedX;
+                            } else if(cube->faces[j].orientation == CMouvement::cmedX) {
+                                cube->faces[j].orientation = CMouvement::cmedZ;
                             }
                             break;
                         }
@@ -331,6 +350,8 @@ void CRubik::rotate(int idRotateGroupe, CMouvement::EDirection rotateSens, bool 
     }
 
     calculGroupes();
+
+    emit(endRotate());
 }
 
 void CRubik::clearMouvements(void) {

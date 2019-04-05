@@ -8,7 +8,7 @@ CMainWindow::CMainWindow(CRubik *rubik, QWidget *parent) : QMainWindow(parent) {
     setupUi(this);
     this->rubik = rubik;
 
-    teScript->setText("import rubik\nrubik.melange(50)");
+    teScript->setText("import rubik\nrubik.melange(50, True)");
 
     lexerPY = new QsciLexerPython();
     teScript->setLexer(lexerPY);
@@ -17,6 +17,7 @@ CMainWindow::CMainWindow(CRubik *rubik, QWidget *parent) : QMainWindow(parent) {
     teScript->setMarginsFont(QFont("Hack", 8));
 
     w3d->setRubik(rubik);
+    wMap->setRubik(rubik);
 
     connect(this, SIGNAL(enablePbRun(bool)), this, SLOT(onEnablePbRun(bool)));
 }

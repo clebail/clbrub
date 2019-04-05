@@ -41,7 +41,8 @@ public:
     int distance(int x, int y, int z) const;
     void printCubeInfo(int x, int y, int z) const;
     QString getLastMouvement(void) const;
-    CRubik::EFace getFace(int x, int y, int z, CMouvement::EDirection direction);
+    CRubik::EFace getFace(int x, int y, int z, CMouvement::EDirection direction) const;
+    static QColor fromEFace(CRubik::EFace colorFace);
 private:
     typedef struct _SCube {
         SFace faces[NBFACE];
@@ -85,6 +86,7 @@ private:
     SCube * findCube(int x, int y, int z) const;
 signals:
     void update(void);
+    void endRotate(void);
 };
 
 #endif // CRUBIK_H

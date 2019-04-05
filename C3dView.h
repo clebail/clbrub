@@ -18,12 +18,15 @@ public:
     void setRubik(CRubik *rubik);
 protected:
     virtual void wheelEvent(QWheelEvent * event);
+    virtual void mousePressEvent(QMouseEvent * event);
+    virtual void mouseMoveEvent(QMouseEvent * event);
 private:
     CRubik *rubik;
     float scale;
     QTimer *timer;
     float roty, rotx, rotz;
     GLuint textures[NBFACE+1];
+    QPoint lastPos;
 
     void drawRubik(bool forceColor);
     void loadTexture( QString textureName, GLuint *texture);

@@ -1,6 +1,7 @@
 //-----------------------------------------------------------------------------------------------
 #include <QtDebug>
 #include <QWheelEvent>
+#include <QMouseEvent>
 #include "C3dView.h"
 //-----------------------------------------------------------------------------------------------
 C3dView::C3dView(QWidget *parent) : QGLWidget(parent) {
@@ -11,7 +12,7 @@ C3dView::C3dView(QWidget *parent) : QGLWidget(parent) {
     timer = new QTimer(this);
 
     connect(timer, SIGNAL(timeout()), this, SLOT(onTimerTimeout()));
-    timer->setInterval(40);
+    timer->setInterval(400);
     //timer->start();
 
     memset(textures, 0, sizeof(GLuint) * (NBFACE + 1));
@@ -82,6 +83,27 @@ void C3dView::wheelEvent(QWheelEvent * event) {
     updateGL();
 }
 //-----------------------------------------------------------------------------------------------
+void C3dView::mousePressEvent(QMouseEvent * event) {
+    lastPos = event->pos();
+}
+//-----------------------------------------------------------------------------------------------
+void C3dView::mouseMoveEvent(QMouseEvent * event) {
+    int dx = event->x() - lastPos.x();
+    int dy = event->y() - lastPos.y();
+
+    if (event->buttons() & Qt::LeftButton) {
+        rotx += 4 * dy;
+        roty += 4 * dx;
+    } else if (event->buttons() & Qt::RightButton) {
+        rotx += 4 * dy;
+        rotz += 4 * dx;
+    }
+
+    updateGL();
+
+    lastPos = event->pos();
+}
+//-----------------------------------------------------------------------------------------------
 void C3dView::drawRubik(bool forceColor) {
     int x, y, z, i, j;
 
@@ -145,7 +167,7 @@ void C3dView::loadTexture(QString textureName, GLuint *texture) {
 }
 //-----------------------------------------------------------------------------------------------
 void C3dView::onTimerTimeout(void) {
-    //rotx=static_cast<float>((static_cast<int>(rotx) + 5) % 360);
+    rotx=static_cast<float>((static_cast<int>(rotx) + 5) % 360);
     //roty=static_cast<float>((static_cast<int>(roty) + 5) % 360);
     //rotz=static_cast<float>((static_cast<int>(rotz) + 5) % 360);
 

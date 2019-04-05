@@ -14,6 +14,7 @@ protected:
     virtual void resizeEvent(QResizeEvent *);
 private:
     CRubik *rubik;
+    int margeX, margeY, size;
 private slots:
     void onUpdate(void);
 };
