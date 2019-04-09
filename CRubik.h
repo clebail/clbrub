@@ -29,19 +29,14 @@ public:
     }SFace;
 
     CRubik(void);
-    CRubik(const QList<CMouvement *>& mouvements);
-    ~CRubik(void);
 
     const CRubik::SFace& getSubFace(int idCube, int idFace) const;
-    void melange(int nb = 50, bool anim = true);
-    int getScore(void) const;
-    QList<CMouvement *> solve(void);
+    QString melange(int nb = 50, bool anim = true);
     void init(void);
-    void exec(QString cmd);
-    int distance(int x, int y, int z) const;
+    QString exec(QString cmd);
     void printCubeInfo(int x, int y, int z) const;
-    QString getLastMouvement(void) const;
     CRubik::EFace getFace(int x, int y, int z, CMouvement::EDirection direction) const;
+    bool win(void);
     static QColor fromEFace(CRubik::EFace colorFace);
 private:
     typedef struct _SCube {
@@ -78,11 +73,9 @@ private:
 
     SCube cubes[NBCUBE];
     SCube *rGroupes[NBROTATEGROUPE][NBCUBEPARFACE];
-    QList<CMouvement *> mouvements;
 
     void calculGroupes(void);
     void rotate(int idRotateGroupe, CMouvement::EDirection rotateSens, bool inverse, int stepCount = ROTATE_STEP, unsigned int ts = 40);
-    void clearMouvements(void);
     SCube * findCube(int x, int y, int z) const;
 signals:
     void update(void);

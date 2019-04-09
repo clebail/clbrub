@@ -13,64 +13,32 @@ CRubik::CRubik(void) {
     init();
 }
 
-CRubik::CRubik(const QList<CMouvement *>& mouvements) {
-    int i;
-
-    init();
-
-    for(i=0;i<mouvements.size();i++) {
-        CMouvement *mouvement = mouvements.at(i);
-
-        rotate(mouvement->getGroupe(), mouvement->getSens(), mouvement->getInverse(), 1, 0);
-    }
-}
-
-CRubik::~CRubik(void) {
-    clearMouvements();
-}
-
 const CRubik::SFace& CRubik::getSubFace(int idCube, int idFace) const {
     return cubes[idCube].faces[idFace];
 }
 
-void CRubik::melange(int nb, bool anim) {
+QString CRubik::melange(int nb, bool anim) {
+    QString result;
+
     for(int i=0;i<nb;i++) {
         CMouvement *mouvement = CMouvement::createMouvement();
 
-        mouvements.append(mouvement);
         if(anim) {
             rotate(mouvement->getGroupe(), mouvement->getSens(), mouvement->getInverse(), ROTATE_STEP, 20);
         } else {
             rotate(mouvement->getGroupe(), mouvement->getSens(), mouvement->getInverse(), 1, 0);
         }
-    }
-}
 
-int CRubik::getScore(void) const {
-    int x, y, z;
-    int score = 0;
+        result = *mouvement;
 
-    for(z=0;z<RUBIKSIZE;z++) {
-        for(y=0;y<RUBIKSIZE;y++) {
-            for(x=0;x<RUBIKSIZE;x++) {
-                score += distance(x, y, z);
-            }
-        }
+        delete mouvement;
     }
 
-    return score;
-}
-
-QList<CMouvement *> CRubik::solve(void) {
-    QList<CMouvement *> mouvements;
-
-    return mouvements;
+    return result;
 }
 
 void CRubik::init(void) {
     int x, y, z, i, j;
-
-    clearMouvements();
 
     for(z=i=0;z<RUBIKSIZE;z++) {
         for(y=0;y<RUBIKSIZE;y++) {
@@ -126,47 +94,21 @@ void CRubik::init(void) {
     calculGroupes();
 }
 
-void CRubik::exec(QString cmd) {
+QString CRubik::exec(QString cmd) {
     QList<CMouvement *> mvts = CMouvement::formString(cmd);
     int i;
+    QString result = *mvts.last();
 
     for(i=0;i<mvts.size();i++) {
         CMouvement * mvt = mvts.at(i);
 
-        mouvements.append(mvt);
+        //mouvements.append(mvt);
         rotate(mvt->getGroupe(), mvt->getSens(), mvt->getInverse());
-    }
-}
 
-int CRubik::distance(int x, int y, int z) const {
-    const SCube *cube = findCube(x, y, z);
-    int distance = 0;
-
-    if(cube != nullptr) {
-        if(x != 1 || y != 1 || z != 1) {
-            int nbChange = 0;
-
-            nbChange += (cube->xc != cube->xo ? 1 : 0);
-            nbChange += (cube->yc != cube->yo ? 1 : 0);
-            nbChange += (cube->zc != cube->zo ? 1 : 0);
-
-            if(cube->isCoin()) {
-                distance = nbChange;
-                if(!cube->isOriented()) {
-                    distance += 3;
-                }
-            } else if(cube->isArete()) {
-                distance = nbChange <= 2 ? 1 : 2;
-                if(!cube->isOriented()) {
-                    distance += 3;
-                }
-            } else {
-                distance = 3 - nbChange;
-            }
-        }
+        delete mvt;
     }
 
-    return distance;
+    return result;
 }
 
 void CRubik::printCubeInfo(int x, int y, int z) const {
@@ -192,16 +134,6 @@ void CRubik::printCubeInfo(int x, int y, int z) const {
     }
 }
 
-QString CRubik::getLastMouvement(void) const {
-    if(mouvements.size() != 0) {
-        CMouvement *mvt = mouvements.last();
-
-        return *mvt;
-    }
-
-    return "";
-}
-
 CRubik::EFace CRubik::getFace(int x, int y, int z, CMouvement::EDirection direction) const {
     SCube *cube = findCube(x, y, z);
 
@@ -218,6 +150,85 @@ CRubik::EFace CRubik::getFace(int x, int y, int z, CMouvement::EDirection direct
     }
 
     return CRubik::crefBlack;
+}
+
+bool CRubik::win(void) {
+    int x, y ,z;
+    CRubik::EFace face;
+
+    face = CRubik::crefBlack;
+    for(z=0;z<RUBIKSIZE;z++) {
+        for(y=0;y<RUBIKSIZE;y++) {
+            CRubik::EFace cFace = getFace(0, y, z, CMouvement::cmedX);
+
+            if(face != CRubik::crefBlack && face != cFace) {
+                return false;
+            }
+            face = cFace;
+        }
+    }
+
+    face = CRubik::crefBlack;
+    for(z=0;z<RUBIKSIZE;z++) {
+        for(y=0;y<RUBIKSIZE;y++) {
+            CRubik::EFace cFace = getFace(2, y, z, CMouvement::cmedX);
+
+            if(face != CRubik::crefBlack && face != cFace) {
+                return false;
+            }
+            face = cFace;
+        }
+    }
+
+    face = CRubik::crefBlack;
+    for(x=RUBIKSIZE-1;x>=0;x--) {
+        for(y=0;y<RUBIKSIZE;y++) {
+            CRubik::EFace cFace = getFace(x, y, 0, CMouvement::cmedY);
+
+            if(face != CRubik::crefBlack && face != cFace) {
+                return false;
+            }
+            face = cFace;
+        }
+    }
+
+    face = CRubik::crefBlack;
+    for(x=RUBIKSIZE-1;x>=0;x--) {
+        for(y=0;y<RUBIKSIZE;y++) {
+            CRubik::EFace cFace = getFace(x, y, 2, CMouvement::cmedY);
+
+            if(face != CRubik::crefBlack && face != cFace) {
+                return false;
+            }
+            face = cFace;
+        }
+    }
+
+    face = CRubik::crefBlack;
+    for(x=RUBIKSIZE-1;x>=0;x--) {
+        for(z=0;z<RUBIKSIZE;z++) {
+            CRubik::EFace cFace = getFace(x, 0, z, CMouvement::cmedZ);
+
+            if(face != CRubik::crefBlack && face != cFace) {
+                return false;
+            }
+            face = cFace;
+        }
+    }
+
+    face = CRubik::crefBlack;
+    for(x=RUBIKSIZE-1;x>=0;x--) {
+        for(z=0;z<RUBIKSIZE;z++) {
+            CRubik::EFace cFace = getFace(x, 2, z, CMouvement::cmedZ);
+
+            if(face != CRubik::crefBlack && face != cFace) {
+                return false;
+            }
+            face = cFace;
+        }
+    }
+
+    return true;
 }
 
 QColor CRubik::fromEFace(CRubik::EFace colorFace) {
@@ -361,12 +372,6 @@ void CRubik::rotate(int idRotateGroupe, CMouvement::EDirection rotateSens, bool 
     calculGroupes();
 
     emit(endRotate());
-}
-
-void CRubik::clearMouvements(void) {
-    while(mouvements.size()) {
-        delete mouvements.takeFirst();
-    }
 }
 
 CRubik::SCube * CRubik::findCube(int x, int y, int z) const {

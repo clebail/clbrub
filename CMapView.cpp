@@ -47,13 +47,13 @@ void CMapView::paintEvent(QPaintEvent *) {
                             y = j;
                             z = 0;
 
-                            qDebug() << "Y" << x << y << z;
-
                             painter.setBrush(CRubik::fromEFace(rubik->getFace(x, y, z, CMouvement::cmedY)));
                         } else if(j < RB2) {
                             x = RB2 - i - 1;
                             y = 2;
                             z = j - RUBIKSIZE;
+
+                            //qDebug() << "Z" << x << y << z;
 
                             painter.setBrush(CRubik::fromEFace(rubik->getFace(x, y, z, CMouvement::cmedZ)));
                         } else if(j < (RB2 + RUBIKSIZE)) {
@@ -61,13 +61,13 @@ void CMapView::paintEvent(QPaintEvent *) {
                             y = RB2 - j + RUBIKSIZE - 1;
                             z = 2;
 
-                            qDebug() << "Y" << x << y << z;
-
                             painter.setBrush(CRubik::fromEFace(rubik->getFace(x, y, z, CMouvement::cmedY)));
                         } else {
                             x = RB2 - i - 1;
                             y = 0;
                             z = RB2 + RB2 - j - 1;
+
+                            //qDebug() << "Z" << x << y << z;
 
                             painter.setBrush(CRubik::fromEFace(rubik->getFace(x, y, z, CMouvement::cmedZ)));
                         }

@@ -18,14 +18,14 @@ model.compile(loss='cosine_proximity', optimizer='adam', metrics=['accuracy'])
 rubik.init()
 rubik.melange(50, False)
 
-while rubik.score != 0:
-    datas = [None] * (27)
+old = ""
+while not rubik.win():
+    datas = [None] * (324)
+    map = rubik.map()
     j = 0
-    for z in range (3):
-            for y in range (3):
-                    for x in range (3):
-                            datas[j] = rubik.distance(x, y ,z)
-                            j = j + 1
+    for m in map:
+        datas[j] = m
+        j = j + 1
 
     p = model.predict(numpy.array([datas]), batch_size=10, verbose=0)
     p = p[0]
@@ -33,13 +33,15 @@ while rubik.score != 0:
     id = -1
     max = 0.0
     for i in range (18):
-        if id == -1 or p[i] > max:
+        if (id == -1 or p[i] > max) and mvt[i] != old:
             id = i
             max = p[i]
 
-    print (str(id)+" "+mvt[id])
-
     rubik.exec(mvt[id])
 
-    print (mvt[id])
-    print (rubik.score())
+    if len(mvt[id]) == 1:
+        old = mvt[id] + "'"
+    else:
+        old = mvt[id][:-1]
+
+    print (mvt[id]+" ---- "+old)
