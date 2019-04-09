@@ -3,6 +3,9 @@
 
 from keras.models import Sequential
 from keras.layers import Dense
+from keras.layers import Conv1D
+from keras.layers import MaxPooling1D
+from keras.layers import Flatten
 import matplotlib.pyplot as plt
 import numpy
 
@@ -14,10 +17,22 @@ X = dataset[:,0:324]
 Y = dataset[:,324:]
 
 model = Sequential()
-model.add(Dense(324, input_dim=324, activation='relu'))
-model.add(Dense(54, activation='sigmoid'))
-model.add(Dense(6, activation='relu'))
-model.add(Dense(18, activation='sigmoid'))
+#model.add(Dense(324, input_dim=324, activation='relu'))
+#model.add(Dense(54, activation='sigmoid'))
+#model.add(Dense(6, activation='relu'))
+#model.add(Dense(18, activation='sigmoid'))
+
+X = X.reshape(X.shape[0], 54, 6).astype('int32')
+
+model.add(Conv1D(324, kernel_size=(5), activation='relu', input_shape=(54, 6)))
+model.add(MaxPooling1D())
+model.add(Conv1D(54, kernel_size=(5), activation='relu'))
+model.add(MaxPooling1D())
+model.add(Conv1D(6, kernel_size=(5), activation='relu'))
+model.add(MaxPooling1D())
+model.add(Flatten())
+model.add(Dense(18, activation='relu'))
+model.add(Dense(18, activation='softmax'))
 
 model.compile(loss='cosine_proximity', optimizer='adam', metrics=['accuracy'])
 
