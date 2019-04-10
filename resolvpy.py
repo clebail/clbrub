@@ -16,16 +16,19 @@ model.load_weights("model.h5")
 model.compile(loss='cosine_proximity', optimizer='adam', metrics=['accuracy'])
 
 rubik.init()
-rubik.melange(50, False)
+rubik.melange(20, False)
 
 old = ""
 while not rubik.win():
-    datas = [None] * (324)
+    datas = numpy.empty((54, 6, 1))
     map = rubik.map()
+    i = 0
     j = 0
     for m in map:
-        datas[j] = m
-        j = j + 1
+        datas[i][j] = m
+        j = (j + 1) % 6
+        if j == 0:
+            i = i + 1
 
     p = model.predict(numpy.array([datas]), batch_size=10, verbose=0)
     p = p[0]

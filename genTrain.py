@@ -3,10 +3,10 @@ from random import randint
 
 mvt = ["U", "U'", "D", "D'", "R", "R'", "L", "L'", "F", "F'", "B", "B'", "M", "M'", "E", "E'", "S", "S'"]
 
-pos = [None] * 10000
+pos = [None] * 1000
 nb = 0
 
-while nb != 10000:
+while nb != 1000:
         lastMvt = rubik.melange(1, False)
 
         if len(lastMvt) == 1:
@@ -34,5 +34,5 @@ while nb != 10000:
                 pos[nb] = key
                 nb = nb + 1
 
-                if nb % 100 == 0:
+                if nb % 10 == 0:
                     rubik.init()

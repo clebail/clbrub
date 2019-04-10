@@ -3,8 +3,8 @@
 
 from keras.models import Sequential
 from keras.layers import Dense
-from keras.layers import Conv1D
-from keras.layers import MaxPooling1D
+from keras.layers import Conv2D
+from keras.layers import Dropout
 from keras.layers import Flatten
 import matplotlib.pyplot as plt
 import numpy
@@ -17,44 +17,19 @@ X = dataset[:,0:324]
 Y = dataset[:,324:]
 
 model = Sequential()
-#model.add(Dense(324, input_dim=324, activation='relu'))
-#model.add(Dense(54, activation='sigmoid'))
-#model.add(Dense(6, activation='relu'))
-#model.add(Dense(18, activation='sigmoid'))
 
-X = X.reshape(X.shape[0], 54, 6).astype('int32')
+X = X.reshape(X.shape[0], 54, 6, 1).astype('int32')
 
-model.add(Conv1D(324, kernel_size=(5), activation='relu', input_shape=(54, 6)))
-model.add(MaxPooling1D())
-model.add(Conv1D(54, kernel_size=(5), activation='relu'))
-model.add(MaxPooling1D())
-model.add(Conv1D(6, kernel_size=(5), activation='relu'))
-model.add(MaxPooling1D())
+model.add(Conv2D(324, kernel_size=(3, 3), activation='relu', input_shape=(54, 6, 1)))
+model.add(Conv2D(54, kernel_size=(3, 3), activation='relu'))
 model.add(Flatten())
-model.add(Dense(18, activation='relu'))
+model.add(Dense(6, activation='relu'))
+model.add(Dropout(0.5))
 model.add(Dense(18, activation='softmax'))
 
 model.compile(loss='cosine_proximity', optimizer='adam', metrics=['accuracy'])
 
-history = model.fit(X, Y, validation_split=0.33, epochs=100, batch_size=10, verbose=1)
-
-print(history.history.keys())
-
-plt.plot(history.history['acc'])
-plt.plot(history.history['val_acc'])
-plt.title('model accuracy')
-plt.ylabel('accuracy')
-plt.xlabel('epoch')
-plt.legend(['train', 'test'], loc='upper left')
-plt.show()
-
-plt.plot(history.history['loss'])
-plt.plot(history.history['val_loss'])
-plt.title('model loss')
-plt.ylabel('loss')
-plt.xlabel('epoch')
-plt.legend(['train', 'test'], loc='upper left')
-plt.show()
+history = model.fit(X, Y, steps_per_epoch=50, epochs=10, verbose=1, validation_data=None, initial_epoch=0)
 
 model_json = model.to_json()
 with open("model.json", "w") as json_file:
