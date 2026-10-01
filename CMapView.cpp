@@ -5,7 +5,6 @@
 
 #define NBX             (RUBIKSIZE * 4)
 #define NBY             (RUBIKSIZE * 3)
-#define RB2             (RUBIKSIZE * 2)
 
 CMapView::CMapView(QWidget *parent) : QWidget(parent) {
     rubik = nullptr;
@@ -20,65 +19,24 @@ void CMapView::setRubik(CRubik *rubik) {
 }
 
 void CMapView::paintEvent(QPaintEvent *) {
+    // Patron standard : U au-dessus de F, L F R B côte à côte, D en dessous (colonne, ligne du coin haut gauche, en faces)
+    static const int patron[NBFACE][2] = { { 1, 0 }, { 2, 1 }, { 1, 1 }, { 1, 2 }, { 0, 1 }, { 3, 1 } };   // U R F D L B
     QPainter painter(this);
-    int i, j;
+    int f, r, c;
 
     painter.setPen(Qt::black);
     painter.setBrush(Qt::white);
     painter.drawRect(geometry());
 
     if(rubik != nullptr) {
-        int x, y, z;
+        // Les autocollants de CCubeCore sont rangés dans l'ordre du patron : face, puis ligne, puis colonne
+        for(f=0;f<NBFACE;f++) {
+            for(r=0;r<RUBIKSIZE;r++) {
+                for(c=0;c<RUBIKSIZE;c++) {
+                    int i = patron[f][1] * RUBIKSIZE + r;
+                    int j = patron[f][0] * RUBIKSIZE + c;
 
-        for(i=0;i<NBY;i++) {
-            for(j=0;j<NBX;j++) {
-                painter.setBrush(Qt::white);
-
-                if((j >= RUBIKSIZE && j < RB2) || (i >= RUBIKSIZE && i < RB2)) {
-                    if(i < RUBIKSIZE) {
-                        x = 2;
-                        y = i;
-                        z = j - RUBIKSIZE;
-
-                        painter.setBrush(CRubik::fromEFace(rubik->getFace(x, y, z, CMouvement::cmedX)));
-                    } else if(i < RB2) {
-                        if(j < RUBIKSIZE) {
-                            x = RB2 - i - 1;
-                            y = j;
-                            z = 0;
-
-                            painter.setBrush(CRubik::fromEFace(rubik->getFace(x, y, z, CMouvement::cmedY)));
-                        } else if(j < RB2) {
-                            x = RB2 - i - 1;
-                            y = 2;
-                            z = j - RUBIKSIZE;
-
-                            //qDebug() << "Z" << x << y << z;
-
-                            painter.setBrush(CRubik::fromEFace(rubik->getFace(x, y, z, CMouvement::cmedZ)));
-                        } else if(j < (RB2 + RUBIKSIZE)) {
-                            x = RB2 - i - 1;
-                            y = RB2 - j + RUBIKSIZE - 1;
-                            z = 2;
-
-                            painter.setBrush(CRubik::fromEFace(rubik->getFace(x, y, z, CMouvement::cmedY)));
-                        } else {
-                            x = RB2 - i - 1;
-                            y = 0;
-                            z = RB2 + RB2 - j - 1;
-
-                            //qDebug() << "Z" << x << y << z;
-
-                            painter.setBrush(CRubik::fromEFace(rubik->getFace(x, y, z, CMouvement::cmedZ)));
-                        }
-                    } else {
-                        x = 0;
-                        y = RB2 - i + RUBIKSIZE - 1;
-                        z = j - RUBIKSIZE;
-
-                        painter.setBrush(CRubik::fromEFace(rubik->getFace(x, y, z, CMouvement::cmedX)));
-                    }
-
+                    painter.setBrush(CRubik::fromEFace(rubik->getStickerColor((f * RUBIKSIZE + r) * RUBIKSIZE + c)));
                     painter.drawRect(j * size + margeX, i * size + margeY, size, size);
                 }
             }

@@ -62,8 +62,7 @@ QMAKE_EXTRA_COMPILERS += bisonheader
 
 OTHER_FILES += \
     $$BISONSOURCES \
-    $$FLEXSOURCES \
-    genTrain.py
+    $$FLEXSOURCES
 
 SOURCES += \
         main.cpp \
@@ -115,7 +114,6 @@ RESOURCES += \
         clbrub.qrc
 
 DISTFILES += \
-    train.py \
-    resolvpy.py \
+    API_PYTHON.md \
     setup.py \
     rubikcore.cpp

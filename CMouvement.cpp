@@ -3,7 +3,6 @@
 #include "CScanner.h"
 #include "CCubeCore.h"
 
-static QChar groupeMap[] = { 'F', 'S', 'B', 'D', 'E', 'U', 'L', 'M', 'R' };
 
 extern QList<CMouvement *> getResult();
 extern void clearResult(void);
@@ -15,22 +14,18 @@ CMouvement::CMouvement() {
 }
 
 CMouvement::CMouvement(QChar type) {
-    groupe = 0;
-    while(groupeMap[groupe] != type) {
-        groupe++;
-        Q_ASSERT(groupe < 9);
-    }
+    // Lettres et couches définies par CCubeCore (notation standard)
+    std::vector<int> moves;
+
+    CCubeCore::parse(std::string(1, type.toLatin1()), moves);
+    Q_ASSERT(moves.size() == 1);
+    groupe = CCubeCore::groupe(moves.front());
     sens = (groupe < 3 ? CMouvement::cmedX : (groupe < 6 ? CMouvement::cmedY : CMouvement::cmedZ));
     inverse = false;
 }
 
 CMouvement::operator QString(void) const {
-    QString result = "";
-
-    result += groupeMap[groupe];
-    result += (inverse ? "'" : "");
-
-    return result;
+    return CCubeCore::moveName(CCubeCore::moveFromGroupe(groupe, inverse));
 }
 
 QList<CMouvement *> CMouvement::formString(QString str, bool *ok) {

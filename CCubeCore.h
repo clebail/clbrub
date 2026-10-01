@@ -8,9 +8,13 @@
 
 // Cœur logique du cube, sans Qt : partagé par l'IHM (CRubik) et le module Python autonome (rubikcore).
 //
-// Un état est un tableau de 54 autocollants (couleur 0..5), dans l'ordre de rubik.map() :
-// 6 faces de 9 autocollants (-x, +x, -z, +z, -y, +y), la face i du cube résolu portant la couleur i.
-// Chaque coup est une permutation de ces 54 autocollants.
+// Notation standard : U haut (+y), D bas, F avant (+z, vers l'observateur), B arrière, R droite (+x), L gauche ;
+// chaque coup tourne dans le sens horaire vu depuis sa face, M comme L, E comme D, S comme F.
+// Couleurs standard : U blanc, R rouge, F vert, D jaune, L orange, B bleu.
+//
+// Un état est un tableau de 54 autocollants dans l'ordre des « facelets » de Kociemba (U1..U9 R1..R9 F1..F9
+// D1..D9 L1..L9 B1..B9) ; chaque valeur est la face d'origine de la couleur : 0 = U, 1 = R, 2 = F, 3 = D,
+// 4 = L, 5 = B (la face i du cube résolu porte donc la valeur i). Chaque coup est une permutation des 54 autocollants.
 class CCubeCore {
 public:
     static const int NBSTICKERS = 54;
@@ -31,8 +35,11 @@ public:
     static const char *moveName(int move);
     // Grammaire simple : coups séparés ou non par des espaces, chacun suivi d'un ' et/ou d'un chiffre de répétition (ex. "R U'2 F")
     static bool parse(const std::string& str, std::vector<int>& moves);
-    // Coup correspondant à un groupe de rotation de CRubik (cf. groupeMap de CMouvement)
+    // Groupe de rotation de CRubik (axe géométrique * 3 + couche 0..2) correspondant à un coup, et inversement
+    static int groupe(int move);
     static int moveFromGroupe(int groupe, bool inverse);
+    // Sens du quart de tour (+1/-1) pour les formules de rotation de CRubik::rotate()
+    static int coefficient(int move);
 
     // Autocollant situé en (x, y, z) (0..2) de normale signe * axe (axe géométrique 0 = x, 1 = y, 2 = z), -1 s'il n'y en a pas
     static int stickerIndex(int x, int y, int z, int axe, int signe);

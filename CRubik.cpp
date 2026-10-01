@@ -9,6 +9,11 @@
 #define TAILLE_POPULATION                   100
 #define TAILLE_GENOME                       25
 
+// Couleurs standard des faces U R F D L B (ordre des valeurs de CCubeCore)
+static const CRubik::EFace COULEURS[NBFACE] = { CRubik::crefBlanc, CRubik::crefRouge, CRubik::crefVert, CRubik::crefJaune, CRubik::crefOrange, CRubik::crefBlue };
+// Couleur d'origine de chaque face d'un cubie (gauche, droite, derrière, devant, bas, haut : cf. calculCoords)
+static const CRubik::EFace COULEURSCUBIE[NBFACE] = { CRubik::crefOrange, CRubik::crefRouge, CRubik::crefBlue, CRubik::crefVert, CRubik::crefJaune, CRubik::crefBlanc };
+
 CRubik::CRubik(void) {   
     init();
 }
@@ -59,7 +64,7 @@ void CRubik::init(void) {
                 cubes[i].faces[4].orientation = cubes[i].faces[5].orientation = CMouvement::cmedZ;
 
                 for(j=0;j<NBFACE;j++) {
-                    CRubik::EFace face = static_cast<CRubik::EFace>(j);
+                    CRubik::EFace face = COULEURSCUBIE[j];
 
                     memcpy(&cubes[i].faces[j].coords, &coords[j], sizeof(float[NBSOMMET][DIMENSION]));
 
@@ -148,11 +153,27 @@ CRubik::EFace CRubik::getFace(int x, int y, int z, CMouvement::EDirection direct
     int signe = (coords[axe] == 0 ? -1 : (coords[axe] == RUBIKSIZE - 1 ? 1 : 0));
     int sticker = CCubeCore::stickerIndex(x, y, z, axe, signe);
 
-    return sticker < 0 ? CRubik::crefBlack : static_cast<CRubik::EFace>(stickers[static_cast<size_t>(sticker)]);
+    return sticker < 0 ? CRubik::crefBlack : getStickerColor(sticker);
 }
 
 bool CRubik::win(void) {
     return CCubeCore::isSolved(stickers.data());
+}
+
+CRubik::EFace CRubik::couleur(uint8_t valeur) {
+    return valeur < NBFACE ? COULEURS[valeur] : CRubik::crefBlack;
+}
+
+uint8_t CRubik::valeur(CRubik::EFace couleur) {
+    uint8_t i;
+
+    if(couleur == CRubik::crefBlancClb) {
+        couleur = CRubik::crefBlanc;
+    }
+
+    for(i=0;i<NBFACE && COULEURS[i]!=couleur;i++);
+
+    return i;
 }
 
 QColor CRubik::fromEFace(CRubik::EFace colorFace) {
@@ -207,7 +228,7 @@ bool CRubik::setState(const QByteArray& state) {
 
         for(j=0;j<NBFACE;j++) {
             if(cubes[i].faces[j].colorFace != CRubik::crefBlack) {
-                masque |= 1 << cubes[i].faces[j].colorFace;
+                masque |= 1 << valeur(cubes[i].faces[j].colorFace);
             }
         }
 
@@ -258,7 +279,7 @@ bool CRubik::setState(const QByteArray& state) {
                     if(cubes[i].faces[j].colorFace != CRubik::crefBlack) {
                         int a = axeFace[j];
 
-                        for(k=0;k<nb && couleurs[k]!=cubes[i].faces[j].colorFace;k++);
+                        for(k=0;k<nb && couleurs[k]!=valeur(cubes[i].faces[j].colorFace);k++);
 
                         for(int l=0;l<DIMENSION;l++) {
                             r[l][a] = normales[k][l] * signeFace[j];
@@ -455,11 +476,12 @@ void CRubik::rotate(int idRotateGroupe, CMouvement::EDirection rotateSens, bool 
         ts = 0;
     }
 
-    // La logique change immédiatement, les cubies suivent l'animation
-    CCubeCore::apply(stickers, CCubeCore::moveFromGroupe(idRotateGroupe, inverse));
+    // La logique change immédiatement, les cubies suivent l'animation ; le sens du quart de tour vient du cœur
+    int move = CCubeCore::moveFromGroupe(idRotateGroupe, inverse);
+    CCubeCore::apply(stickers, move);
 
     int step;
-    int coef = (inverse ? -1 : 1);
+    int coef = CCubeCore::coefficient(move);
     double angle = static_cast<double>(90/stepCount) * coef;
     float c = static_cast<float>(cos(angle * M_PI / 180));
     float s = static_cast<float>(sin(angle * M_PI / 180));

@@ -37,6 +37,7 @@ public:
     QString exec(QString cmd, bool anim = true);
     void printCubeInfo(int x, int y, int z) const;
     CRubik::EFace getFace(int x, int y, int z, CMouvement::EDirection direction) const;
+    CRubik::EFace getStickerColor(int sticker) const { return couleur(stickers[static_cast<size_t>(sticker)]); }
     bool win(void);
     // État logique : les 54 autocollants de CCubeCore (même format que le module rubikcore)
     const CCubeCore::State& getStickers(void) const { return stickers; }
@@ -44,6 +45,9 @@ public:
     bool setState(const QByteArray& state);
     void setDisplay(bool display);
     static QColor fromEFace(CRubik::EFace colorFace);
+    // Valeur d'un autocollant (face d'origine U R F D L B, cf. CCubeCore) <-> couleur
+    static CRubik::EFace couleur(uint8_t valeur);
+    static uint8_t valeur(CRubik::EFace couleur);
 private:
     typedef struct _SCube {
         SFace faces[NBFACE];

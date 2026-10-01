@@ -7,7 +7,8 @@
 C3dView::C3dView(QWidget *parent) : QGLWidget(parent) {
     scale = 1.0;
     rotx = roty = rotz = 0.0;
-    roty = 45.0;
+    // Vue par défaut : U en haut, F devant à gauche, R devant à droite
+    roty = -45.0;
     rotx = 30.0;
     timer = new QTimer(this);
 
