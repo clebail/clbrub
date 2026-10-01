@@ -115,5 +115,6 @@ RESOURCES += \
 
 DISTFILES += \
     API_PYTHON.md \
+    PLAN_ASTAR.md \
     setup.py \
     rubikcore.cpp
