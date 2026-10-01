@@ -5,6 +5,7 @@
 #include <QList>
 #include <QGLWidget>
 #include "CMouvement.h"
+#include "CCubeCore.h"
 
 #define NBSOMMET                    4
 #define NBFACE                      6
@@ -14,8 +15,6 @@
 #define UNIT                        0.5f
 #define NBROTATEGROUPE              (NBFACE + (RUBIKSIZE - 2) * DIMENSION)
 #define ROTATE_STEP                 5
-// Pour chaque cube : position (x, y, z) puis matrice de rotation 3x3 (ligne par ligne), valeurs dans [-1, 1]
-#define STATESIZE                   (NBCUBE * (DIMENSION + DIMENSION * DIMENSION))
 
 class CRubik : public QObject {
     Q_OBJECT
@@ -39,6 +38,8 @@ public:
     void printCubeInfo(int x, int y, int z) const;
     CRubik::EFace getFace(int x, int y, int z, CMouvement::EDirection direction) const;
     bool win(void);
+    // État logique : les 54 autocollants de CCubeCore (même format que le module rubikcore)
+    const CCubeCore::State& getStickers(void) const { return stickers; }
     QByteArray getState(void) const;
     bool setState(const QByteArray& state);
     void setDisplay(bool display);
@@ -79,11 +80,14 @@ private:
     SCube cubes[NBCUBE];
     SCube *rGroupes[NBROTATEGROUPE][NBCUBEPARFACE];
     SCube *positions[NBCUBE];
+    // Logique du cube ; les cubies ne servent plus qu'au rendu
+    CCubeCore::State stickers;
 
     void calculGroupes(void);
     void rotate(int idRotateGroupe, CMouvement::EDirection rotateSens, bool inverse, int stepCount = ROTATE_STEP, unsigned int ts = 40);
     SCube * findCube(int x, int y, int z) const;
     static void calculCoords(float fX, float fY, float fZ, float coords[NBFACE][NBSOMMET][DIMENSION]);
+    void placeCubes(const int position[NBCUBE][DIMENSION], const int rotation[NBCUBE][DIMENSION][DIMENSION]);
     static void getRotation(const SCube *cube, int r[DIMENSION][DIMENSION]);
 signals:
     void update(void);

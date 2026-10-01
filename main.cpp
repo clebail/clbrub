@@ -26,8 +26,8 @@ static PyMethodDef RubikMethods[] = {
     {"map",  rubik_map, METH_VARARGS, "Retourne la map du cube."},
     {"win",  rubik_win, METH_VARARGS, "Retourne vrai si le cube est ok."},
     {"debug",  rubik_debug, METH_VARARGS, "Affiche les information d'un cube."},
-    {"get_state",  rubik_get_state, METH_NOARGS, "Retourne l'état du cube (bytes hashable)."},
-    {"set_state",  rubik_set_state, METH_VARARGS, "Restaure un état retourné par get_state."},
+    {"get_state",  rubik_get_state, METH_NOARGS, "Retourne l'état du cube : 54 couleurs (bytes hashable, même format que rubikcore)."},
+    {"set_state",  rubik_set_state, METH_VARARGS, "Place le cube dans un état (54 couleurs, bytes ou tableau numpy uint8)."},
     {"display",  rubik_display, METH_VARARGS, "Active/désactive le rafraîchissement de l'affichage (et les animations)."},
     {"moves",  rubik_moves, METH_VARARGS, "Retourne la liste des coups (slices=True inclut M, E et S)."},
     {"inverse",  rubik_inverse, METH_VARARGS, "Retourne la séquence inverse d'une série de mouvements."},
@@ -106,101 +106,21 @@ PyObject * rubik_exec(PyObject *, PyObject *args) {
 }
 
 PyObject * rubik_map(PyObject *, PyObject *) {
-    PyObject* listObj = PyList_New(RUBIKSIZE * RUBIKSIZE * NBFACE * NBFACE);
+    const CCubeCore::State& stickers = rubik->getStickers();
+    PyObject* listObj = PyList_New(CCubeCore::NBSTICKERS * NBFACE);
     int idx = 0;
-    int x, y, z;
-
 
     if (!listObj) return nullptr;
 
-    //X
-    for(z=0;z<RUBIKSIZE;z++) {
-        for(y=0;y<RUBIKSIZE;y++) {
-            CRubik::EFace face = rubik->getFace(0, y, z, CMouvement::cmedX);
-            for(int i=0;i<NBFACE;i++) {
-                PyObject *num = PyLong_FromLong(i == static_cast<int>(face) ? 1 : 0);
-                if(num != nullptr) {
-                    PyList_SET_ITEM(listObj, idx++, num);
-                } else {
-                    Py_DECREF(listObj);
-                    return nullptr;
-                }
-            }
-        }
-    }
-    for(z=0;z<RUBIKSIZE;z++) {
-        for(y=0;y<RUBIKSIZE;y++) {
-            CRubik::EFace face = rubik->getFace(2, y, z, CMouvement::cmedX);
-            for(int i=0;i<NBFACE;i++) {
-                PyObject *num = PyLong_FromLong(i == static_cast<int>(face) ? 1 : 0);
-                if(num != nullptr) {
-                    PyList_SET_ITEM(listObj, idx++, num);
-                } else {
-                    Py_DECREF(listObj);
-                    return nullptr;
-                }
-            }
-        }
-    }
-
-    //Y
-    for(x=RUBIKSIZE-1;x>=0;x--) {
-        for(y=0;y<RUBIKSIZE;y++) {
-            CRubik::EFace face = rubik->getFace(x, y, 0, CMouvement::cmedY);
-            for(int i=0;i<NBFACE;i++) {
-                PyObject *num = PyLong_FromLong(i == static_cast<int>(face) ? 1 : 0);
-                if(num != nullptr) {
-                    PyList_SET_ITEM(listObj, idx++, num);
-                } else {
-                    Py_DECREF(listObj);
-                    return nullptr;
-                }
-            }
-        }
-    }
-
-    for(x=RUBIKSIZE-1;x>=0;x--) {
-        for(y=0;y<RUBIKSIZE;y++) {
-            CRubik::EFace face = rubik->getFace(x, y, 2, CMouvement::cmedY);
-            for(int i=0;i<NBFACE;i++) {
-                PyObject *num = PyLong_FromLong(i == static_cast<int>(face) ? 1 : 0);
-                if(num != nullptr) {
-                    PyList_SET_ITEM(listObj, idx++, num);
-                } else {
-                    Py_DECREF(listObj);
-                    return nullptr;
-                }
-            }
-        }
-    }
-
-    //Z
-    for(x=RUBIKSIZE-1;x>=0;x--) {
-        for(z=0;z<RUBIKSIZE;z++) {
-            CRubik::EFace face = rubik->getFace(x, 0, z, CMouvement::cmedZ);
-            for(int i=0;i<NBFACE;i++) {
-                PyObject *num = PyLong_FromLong(i == static_cast<int>(face) ? 1 : 0);
-                if(num != nullptr) {
-                    PyList_SET_ITEM(listObj, idx++, num);
-                } else {
-                    Py_DECREF(listObj);
-                    return nullptr;
-                }
-            }
-        }
-    }
-
-    for(x=RUBIKSIZE-1;x>=0;x--) {
-        for(z=0;z<RUBIKSIZE;z++) {
-            CRubik::EFace face = rubik->getFace(x, 2, z, CMouvement::cmedZ);
-            for(int i=0;i<NBFACE;i++) {
-                PyObject *num = PyLong_FromLong(i == static_cast<int>(face) ? 1 : 0);
-                if(num != nullptr) {
-                    PyList_SET_ITEM(listObj, idx++, num);
-                } else {
-                    Py_DECREF(listObj);
-                    return nullptr;
-                }
+    // Encodage one-hot des 54 autocollants
+    for(int sticker=0;sticker<CCubeCore::NBSTICKERS;sticker++) {
+        for(int i=0;i<NBFACE;i++) {
+            PyObject *num = PyLong_FromLong(i == stickers[static_cast<size_t>(sticker)] ? 1 : 0);
+            if(num != nullptr) {
+                PyList_SET_ITEM(listObj, idx++, num);
+            } else {
+                Py_DECREF(listObj);
+                return nullptr;
             }
         }
     }
@@ -237,15 +157,19 @@ PyObject * rubik_get_state(PyObject *, PyObject *) {
 }
 
 PyObject * rubik_set_state(PyObject *, PyObject *args) {
-    const char *data;
-    Py_ssize_t size;
+    Py_buffer buffer;
+    bool ok;
 
-    if(!PyArg_ParseTuple(args, "y#", &data, &size)) {
+    // Tout objet buffer contigu : bytes, bytearray, ligne d'un tableau numpy uint8...
+    if(!PyArg_ParseTuple(args, "y*", &buffer)) {
         return nullptr;
     }
 
-    if(!rubik->setState(QByteArray(data, static_cast<int>(size)))) {
-        PyErr_SetString(PyExc_ValueError, "État du cube invalide.");
+    ok = rubik->setState(QByteArray(static_cast<const char *>(buffer.buf), static_cast<int>(buffer.len)));
+    PyBuffer_Release(&buffer);
+
+    if(!ok) {
+        PyErr_SetString(PyExc_ValueError, "État du cube invalide (54 couleurs 0..5 attendues).");
         return nullptr;
     }
 

@@ -85,6 +85,8 @@ void CRubik::init(void) {
         }
     }
 
+    stickers = CCubeCore::solved();
+
     calculGroupes();
 }
 
@@ -139,100 +141,18 @@ void CRubik::printCubeInfo(int x, int y, int z) const {
 }
 
 CRubik::EFace CRubik::getFace(int x, int y, int z, CMouvement::EDirection direction) const {
-    SCube *cube = findCube(x, y, z);
+    // Axe géométrique (0 = x, 1 = y, 2 = z) de la normale associée à chaque EDirection
+    static const int directionToAxe[DIMENSION] = { 0, 2, 1 };
+    const int coords[DIMENSION] = { x, y, z };
+    int axe = directionToAxe[direction];
+    int signe = (coords[axe] == 0 ? -1 : (coords[axe] == RUBIKSIZE - 1 ? 1 : 0));
+    int sticker = CCubeCore::stickerIndex(x, y, z, axe, signe);
 
-    if(cube != nullptr) {
-        int i;
-
-        for(i=0;i<NBFACE;i++) {
-            SFace *face = &cube->faces[i];
-
-            if(face->orientation == direction && face->colorFace != CRubik::crefBlack) {
-                return face->colorFace == CRubik::crefBlancClb ? CRubik::crefBlanc : face->colorFace;
-            }
-        }
-    }
-
-    return CRubik::crefBlack;
+    return sticker < 0 ? CRubik::crefBlack : static_cast<CRubik::EFace>(stickers[static_cast<size_t>(sticker)]);
 }
 
 bool CRubik::win(void) {
-    int x, y ,z;
-    CRubik::EFace face;
-
-    face = CRubik::crefBlack;
-    for(z=0;z<RUBIKSIZE;z++) {
-        for(y=0;y<RUBIKSIZE;y++) {
-            CRubik::EFace cFace = getFace(0, y, z, CMouvement::cmedX);
-
-            if(face != CRubik::crefBlack && face != cFace) {
-                return false;
-            }
-            face = cFace;
-        }
-    }
-
-    face = CRubik::crefBlack;
-    for(z=0;z<RUBIKSIZE;z++) {
-        for(y=0;y<RUBIKSIZE;y++) {
-            CRubik::EFace cFace = getFace(2, y, z, CMouvement::cmedX);
-
-            if(face != CRubik::crefBlack && face != cFace) {
-                return false;
-            }
-            face = cFace;
-        }
-    }
-
-    face = CRubik::crefBlack;
-    for(x=RUBIKSIZE-1;x>=0;x--) {
-        for(y=0;y<RUBIKSIZE;y++) {
-            CRubik::EFace cFace = getFace(x, y, 0, CMouvement::cmedY);
-
-            if(face != CRubik::crefBlack && face != cFace) {
-                return false;
-            }
-            face = cFace;
-        }
-    }
-
-    face = CRubik::crefBlack;
-    for(x=RUBIKSIZE-1;x>=0;x--) {
-        for(y=0;y<RUBIKSIZE;y++) {
-            CRubik::EFace cFace = getFace(x, y, 2, CMouvement::cmedY);
-
-            if(face != CRubik::crefBlack && face != cFace) {
-                return false;
-            }
-            face = cFace;
-        }
-    }
-
-    face = CRubik::crefBlack;
-    for(x=RUBIKSIZE-1;x>=0;x--) {
-        for(z=0;z<RUBIKSIZE;z++) {
-            CRubik::EFace cFace = getFace(x, 0, z, CMouvement::cmedZ);
-
-            if(face != CRubik::crefBlack && face != cFace) {
-                return false;
-            }
-            face = cFace;
-        }
-    }
-
-    face = CRubik::crefBlack;
-    for(x=RUBIKSIZE-1;x>=0;x--) {
-        for(z=0;z<RUBIKSIZE;z++) {
-            CRubik::EFace cFace = getFace(x, 2, z, CMouvement::cmedZ);
-
-            if(face != CRubik::crefBlack && face != cFace) {
-                return false;
-            }
-            face = cFace;
-        }
-    }
-
-    return true;
+    return CCubeCore::isSolved(stickers.data());
 }
 
 QColor CRubik::fromEFace(CRubik::EFace colorFace) {
@@ -256,101 +176,186 @@ QColor CRubik::fromEFace(CRubik::EFace colorFace) {
 }
 
 QByteArray CRubik::getState(void) const {
-    QByteArray state;
-    int i, j, k;
-
-    state.reserve(STATESIZE);
-
-    for(i=0;i<NBCUBE;i++) {
-        const SCube *cube = &cubes[i];
-        int r[DIMENSION][DIMENSION];
-
-        getRotation(cube, r);
-
-        state.append(static_cast<char>(cube->xc));
-        state.append(static_cast<char>(cube->yc));
-        state.append(static_cast<char>(cube->zc));
-
-        for(j=0;j<DIMENSION;j++) {
-            for(k=0;k<DIMENSION;k++) {
-                state.append(static_cast<char>(r[j][k]));
-            }
-        }
-    }
-
-    return state;
+    return QByteArray(reinterpret_cast<const char *>(stickers.data()), CCubeCore::NBSTICKERS);
 }
 
 bool CRubik::setState(const QByteArray& state) {
-    // Axe géométrique (0 = x, 1 = y, 2 = z) de la normale associée à chaque EDirection, et inversement
-    static const int directionToAxe[DIMENSION] = { 0, 2, 1 };
-    static const CMouvement::EDirection axeToDirection[DIMENSION] = { CMouvement::cmedX, CMouvement::cmedZ, CMouvement::cmedY };
-    bool positions[NBCUBE] = { false };
-    int i, j, k, l;
+    // Normale d'origine de chaque face d'un cubie (cf. calculCoords) : axe géométrique et signe
+    static const int axeFace[NBFACE] = { 0, 0, 2, 2, 1, 1 };
+    static const int signeFace[NBFACE] = { -1, 1, -1, 1, -1, 1 };
+    const uint8_t *data = reinterpret_cast<const uint8_t *>(state.constData());
+    int cubeParCouleurs[1 << NBFACE];
+    bool utilise[NBCUBE] = { false };
+    int position[NBCUBE][DIMENSION];
+    int rotation[NBCUBE][DIMENSION][DIMENSION];
+    int i, j, k, x, y, z;
 
-    if(state.size() != STATESIZE) {
+    if(state.size() != CCubeCore::NBSTICKERS) {
         return false;
     }
 
-    // Validation complète avant toute modification du cube
-    for(i=0;i<NBCUBE;i++) {
-        const signed char *data = reinterpret_cast<const signed char *>(state.constData()) + i * (DIMENSION + DIMENSION * DIMENSION);
-        int r[DIMENSION][DIMENSION];
-        int idPosition = 0;
-
-        for(j=0;j<DIMENSION + DIMENSION * DIMENSION;j++) {
-            if(data[j] < -1 || data[j] > 1) {
-                return false;
-            }
-        }
-
-        for(j=0;j<DIMENSION;j++) {
-            idPosition = idPosition * RUBIKSIZE + data[j] + MARGIN;
-        }
-
-        if(positions[idPosition]) {
-            return false;
-        }
-        positions[idPosition] = true;
-
-        for(j=0;j<DIMENSION;j++) {
-            for(k=0;k<DIMENSION;k++) {
-                r[j][k] = data[DIMENSION + j * DIMENSION + k];
-            }
-        }
-
-        // Chaque colonne doit être un vecteur unitaire d'axe...
-        for(k=0;k<DIMENSION;k++) {
-            int nb = 0;
-
-            for(j=0;j<DIMENSION;j++) {
-                nb += abs(r[j][k]);
-            }
-
-            if(nb != 1) {
-                return false;
-            }
-        }
-
-        // ... et la matrice une rotation (pas une symétrie)
-        int det = r[0][0] * (r[1][1] * r[2][2] - r[1][2] * r[2][1])
-                - r[0][1] * (r[1][0] * r[2][2] - r[1][2] * r[2][0])
-                + r[0][2] * (r[1][0] * r[2][1] - r[1][1] * r[2][0]);
-
-        if(det != 1) {
+    for(i=0;i<CCubeCore::NBSTICKERS;i++) {
+        if(data[i] >= NBFACE) {
             return false;
         }
     }
 
+    // Chaque cubie est identifié par l'ensemble de ses couleurs
+    memset(cubeParCouleurs, -1, sizeof(cubeParCouleurs));
+    for(i=0;i<NBCUBE;i++) {
+        int masque = 0;
+
+        for(j=0;j<NBFACE;j++) {
+            if(cubes[i].faces[j].colorFace != CRubik::crefBlack) {
+                masque |= 1 << cubes[i].faces[j].colorFace;
+            }
+        }
+
+        cubeParCouleurs[masque] = i;
+    }
+
+    // Validation complète et calcul du placement avant toute modification du cube
+    for(z=0;z<RUBIKSIZE;z++) {
+        for(y=0;y<RUBIKSIZE;y++) {
+            for(x=0;x<RUBIKSIZE;x++) {
+                const int coords[DIMENSION] = { x, y, z };
+                int normales[NBFACE][DIMENSION];
+                int couleurs[NBFACE];
+                int nb = 0, masque = 0;
+                int r[DIMENSION][DIMENSION];
+                bool connu[DIMENSION] = { false, false, false };
+                int nbConnus = 0;
+
+                // Autocollants présents à cette position
+                for(j=0;j<DIMENSION;j++) {
+                    for(k=-1;k<=1;k+=2) {
+                        int sticker = CCubeCore::stickerIndex(x, y, z, j, k);
+
+                        if(sticker >= 0) {
+                            int p[DIMENSION];
+
+                            CCubeCore::stickerGeometry(sticker, p, normales[nb]);
+                            couleurs[nb] = data[sticker];
+
+                            if(masque & (1 << couleurs[nb])) {
+                                return false;
+                            }
+
+                            masque |= 1 << couleurs[nb];
+                            nb++;
+                        }
+                    }
+                }
+
+                i = cubeParCouleurs[masque];
+                if(i < 0 || utilise[i]) {
+                    return false;
+                }
+                utilise[i] = true;
+
+                // Chaque face colorée du cubie donne une colonne de la rotation : R * normale d'origine = normale actuelle
+                for(j=0;j<NBFACE;j++) {
+                    if(cubes[i].faces[j].colorFace != CRubik::crefBlack) {
+                        int a = axeFace[j];
+
+                        for(k=0;k<nb && couleurs[k]!=cubes[i].faces[j].colorFace;k++);
+
+                        for(int l=0;l<DIMENSION;l++) {
+                            r[l][a] = normales[k][l] * signeFace[j];
+                        }
+
+                        connu[a] = true;
+                        nbConnus++;
+                    }
+                }
+
+                if(nbConnus < 2) {
+                    // Centre ou cubie intérieur : la rotation n'est pas entièrement déterminée par les couleurs,
+                    // on garde la rotation actuelle si elle convient (le logo du centre blanc ne tourne pas inutilement)
+                    int actuelle[DIMENSION][DIMENSION];
+                    bool convient = true;
+
+                    getRotation(&cubes[i], actuelle);
+
+                    for(j=0;j<DIMENSION;j++) {
+                        for(k=0;k<DIMENSION && connu[j];k++) {
+                            convient = convient && (actuelle[k][j] == r[k][j]);
+                        }
+                    }
+
+                    if(convient) {
+                        memcpy(r, actuelle, sizeof(r));
+                    } else {
+                        // Sinon : un axe perpendiculaire quelconque complète la rotation
+                        int a = (connu[0] ? 0 : (connu[1] ? 1 : 2));
+                        int b = (a + 1) % DIMENSION;
+
+                        for(j=0;j<DIMENSION;j++) {
+                            for(k=0;k<DIMENSION;k++) {
+                                r[k][b] = (k == j);
+                            }
+                            if(r[0][a] * r[0][b] + r[1][a] * r[1][b] + r[2][a] * r[2][b] == 0) {
+                                break;
+                            }
+                        }
+                        connu[b] = true;
+                        nbConnus = 2;
+                    }
+                }
+
+                if(nbConnus == 2) {
+                    // Colonne manquante : R e_c = R e_(c+1) x R e_(c+2)
+                    int c = (!connu[0] ? 0 : (!connu[1] ? 1 : 2));
+                    int a = (c + 1) % DIMENSION;
+                    int b = (c + 2) % DIMENSION;
+
+                    r[0][c] = r[1][a] * r[2][b] - r[2][a] * r[1][b];
+                    r[1][c] = r[2][a] * r[0][b] - r[0][a] * r[2][b];
+                    r[2][c] = r[0][a] * r[1][b] - r[1][a] * r[0][b];
+                }
+
+                // Une rotation : colonnes unitaires (normales d'axes) et déterminant +1 (sinon arête/coin miroir)
+                int det = r[0][0] * (r[1][1] * r[2][2] - r[1][2] * r[2][1])
+                        - r[0][1] * (r[1][0] * r[2][2] - r[1][2] * r[2][0])
+                        + r[0][2] * (r[1][0] * r[2][1] - r[1][1] * r[2][0]);
+
+                if(det != 1) {
+                    return false;
+                }
+
+                memcpy(rotation[i], r, sizeof(r));
+                for(j=0;j<DIMENSION;j++) {
+                    position[i][j] = coords[j] - MARGIN;
+                }
+            }
+        }
+    }
+
+    placeCubes(position, rotation);
+    memcpy(stickers.data(), data, CCubeCore::NBSTICKERS);
+
+    calculGroupes();
+
+    emit(update());
+    emit(endRotate());
+
+    return true;
+}
+
+void CRubik::placeCubes(const int position[NBCUBE][DIMENSION], const int rotation[NBCUBE][DIMENSION][DIMENSION]) {
+    // Axe géométrique (0 = x, 1 = y, 2 = z) de la normale associée à chaque EDirection, et inversement
+    static const int directionToAxe[DIMENSION] = { 0, 2, 1 };
+    static const CMouvement::EDirection axeToDirection[DIMENSION] = { CMouvement::cmedX, CMouvement::cmedZ, CMouvement::cmedY };
+    int i, j, k, l;
+
     for(i=0;i<NBCUBE;i++) {
         SCube *cube = &cubes[i];
-        const signed char *data = reinterpret_cast<const signed char *>(state.constData()) + i * (DIMENSION + DIMENSION * DIMENSION);
-        const signed char *r = data + DIMENSION;
+        const int (*r)[DIMENSION] = rotation[i];
         float coords[NBFACE][NBSOMMET][DIMENSION];
 
-        cube->xc = data[0];
-        cube->yc = data[1];
-        cube->zc = data[2];
+        cube->xc = position[i][0];
+        cube->yc = position[i][1];
+        cube->zc = position[i][2];
 
         calculCoords(static_cast<float>(cube->xo), static_cast<float>(cube->yo), static_cast<float>(cube->zo), coords);
 
@@ -360,24 +365,17 @@ bool CRubik::setState(const QByteArray& state) {
 
             for(k=0;k<NBSOMMET;k++) {
                 for(l=0;l<DIMENSION;l++) {
-                    face->coords[k][l] = r[l * DIMENSION] * coords[j][k][0] + r[l * DIMENSION + 1] * coords[j][k][1] + r[l * DIMENSION + 2] * coords[j][k][2];
+                    face->coords[k][l] = r[l][0] * coords[j][k][0] + r[l][1] * coords[j][k][1] + r[l][2] * coords[j][k][2];
                 }
             }
 
             for(l=0;l<DIMENSION;l++) {
-                if(r[l * DIMENSION + axe] != 0) {
+                if(r[l][axe] != 0) {
                     face->orientation = axeToDirection[l];
                 }
             }
         }
     }
-
-    calculGroupes();
-
-    emit(update());
-    emit(endRotate());
-
-    return true;
 }
 
 void CRubik::setDisplay(bool display) {
@@ -456,6 +454,9 @@ void CRubik::rotate(int idRotateGroupe, CMouvement::EDirection rotateSens, bool 
         stepCount = 1;
         ts = 0;
     }
+
+    // La logique change immédiatement, les cubies suivent l'animation
+    CCubeCore::apply(stickers, CCubeCore::moveFromGroupe(idRotateGroupe, inverse));
 
     int step;
     int coef = (inverse ? -1 : 1);

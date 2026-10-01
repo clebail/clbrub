@@ -7,3 +7,7 @@ mouvements.l.cpp
 mouvements.y.cpp
 mouvements.y.hpp
 stack.hh
+build/
+*.so
+.qmake.stash
+clbrub

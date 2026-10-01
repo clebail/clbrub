@@ -1,6 +1,7 @@
 #include <sstream>
 #include "CMouvement.h"
 #include "CScanner.h"
+#include "CCubeCore.h"
 
 static QChar groupeMap[] = { 'F', 'S', 'B', 'D', 'E', 'U', 'L', 'M', 'R' };
 
@@ -76,12 +77,10 @@ QString CMouvement::inverseSequence(QString str, bool *ok) {
 }
 
 QStringList CMouvement::liste(bool slices) {
-    // Même ordre que les labels de genTrain.py : faces puis tranches, chaque coup suivi de son inverse
-    const QString types = (slices ? "UDRLFBMES" : "UDRLFB");
     QStringList result;
 
-    for(const QChar& type : types) {
-        result << QString(type) << QString(type) + "'";
+    for(int i=0;i<CCubeCore::nbMoves(slices);i++) {
+        result << CCubeCore::moveName(i);
     }
 
     return result;
