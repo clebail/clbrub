@@ -32,8 +32,12 @@ void CMainWindow::runScript(QString script) {
     strcpy(buffer, stdScript.c_str());
 
     emit(enablePbRun(false));
+    PyGILState_STATE gstate = PyGILState_Ensure();
     PyRun_SimpleString(buffer);
+    PyGILState_Release(gstate);
     emit(enablePbRun(true));
+
+    delete[] buffer;
 }
 
 void CMainWindow::on_pbRun_clicked() {

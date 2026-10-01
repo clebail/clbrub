@@ -17,11 +17,11 @@ const CRubik::SFace& CRubik::getSubFace(int idCube, int idFace) const {
     return cubes[idCube].faces[idFace];
 }
 
-QString CRubik::melange(int nb, bool anim) {
-    QString result;
+QString CRubik::melange(int nb, bool anim, bool slices) {
+    QStringList result;
 
     for(int i=0;i<nb;i++) {
-        CMouvement *mouvement = CMouvement::createMouvement();
+        CMouvement *mouvement = CMouvement::createMouvement(slices);
 
         if(anim) {
             rotate(mouvement->getGroupe(), mouvement->getSens(), mouvement->getInverse(), ROTATE_STEP, 20);
@@ -29,12 +29,12 @@ QString CRubik::melange(int nb, bool anim) {
             rotate(mouvement->getGroupe(), mouvement->getSens(), mouvement->getInverse(), 1, 0);
         }
 
-        result = *mouvement;
+        result << *mouvement;
 
         delete mouvement;
     }
 
-    return result;
+    return result.join(' ');
 }
 
 void CRubik::init(void) {
@@ -46,15 +46,9 @@ void CRubik::init(void) {
                 float fX = static_cast<float>(x - MARGIN);
                 float fY = static_cast<float>(y - MARGIN);
                 float fZ = static_cast<float>(z - MARGIN);
+                float coords[NBFACE][NBSOMMET][DIMENSION];
 
-                float coords[NBFACE][NBSOMMET][DIMENSION] = {
-                    { { fX-UNIT, fY-UNIT, fZ-UNIT }, { fX-UNIT, fY-UNIT, fZ+UNIT }, { fX-UNIT, fY+UNIT, fZ+UNIT }, { fX-UNIT, fY+UNIT, fZ-UNIT } }, //gauche
-                    { { fX+UNIT, fY-UNIT, fZ+UNIT }, { fX+UNIT, fY-UNIT, fZ-UNIT }, { fX+UNIT, fY+UNIT, fZ-UNIT }, { fX+UNIT, fY+UNIT, fZ+UNIT } }, //droite
-                    { { fX+UNIT, fY-UNIT, fZ-UNIT }, { fX-UNIT, fY-UNIT, fZ-UNIT }, { fX-UNIT, fY+UNIT, fZ-UNIT }, { fX+UNIT, fY+UNIT, fZ-UNIT } }, //derrière
-                    { { fX-UNIT, fY-UNIT, fZ+UNIT }, { fX+UNIT, fY-UNIT, fZ+UNIT }, { fX+UNIT, fY+UNIT, fZ+UNIT }, { fX-UNIT, fY+UNIT, fZ+UNIT } }, //devant
-                    { { fX-UNIT, fY-UNIT, fZ-UNIT }, { fX+UNIT, fY-UNIT, fZ-UNIT }, { fX+UNIT, fY-UNIT, fZ+UNIT }, { fX-UNIT, fY-UNIT, fZ+UNIT } }, //bas
-                    { { fX-UNIT, fY+UNIT, fZ+UNIT }, { fX+UNIT, fY+UNIT, fZ+UNIT }, { fX+UNIT, fY+UNIT, fZ-UNIT }, { fX-UNIT, fY+UNIT, fZ-UNIT } }  //haut
-                };
+                calculCoords(fX, fY, fZ, coords);
 
                 cubes[i].faces[0].origineOrientation = cubes[i].faces[1].origineOrientation = CMouvement::cmedX;
                 cubes[i].faces[2].origineOrientation = cubes[i].faces[3].origineOrientation = CMouvement::cmedY;
@@ -94,16 +88,26 @@ void CRubik::init(void) {
     calculGroupes();
 }
 
-QString CRubik::exec(QString cmd) {
+QString CRubik::exec(QString cmd, bool anim) {
     QList<CMouvement *> mvts = CMouvement::formString(cmd);
     int i;
+
+    // Commande vide ou invalide : rien à exécuter
+    if(mvts.isEmpty()) {
+        return "";
+    }
+
     QString result = *mvts.last();
 
     for(i=0;i<mvts.size();i++) {
         CMouvement * mvt = mvts.at(i);
 
         //mouvements.append(mvt);
-        rotate(mvt->getGroupe(), mvt->getSens(), mvt->getInverse());
+        if(anim) {
+            rotate(mvt->getGroupe(), mvt->getSens(), mvt->getInverse());
+        } else {
+            rotate(mvt->getGroupe(), mvt->getSens(), mvt->getInverse(), 1, 0);
+        }
 
         delete mvt;
     }
@@ -251,13 +255,183 @@ QColor CRubik::fromEFace(CRubik::EFace colorFace) {
     }
 }
 
+QByteArray CRubik::getState(void) const {
+    QByteArray state;
+    int i, j, k;
+
+    state.reserve(STATESIZE);
+
+    for(i=0;i<NBCUBE;i++) {
+        const SCube *cube = &cubes[i];
+        int r[DIMENSION][DIMENSION];
+
+        getRotation(cube, r);
+
+        state.append(static_cast<char>(cube->xc));
+        state.append(static_cast<char>(cube->yc));
+        state.append(static_cast<char>(cube->zc));
+
+        for(j=0;j<DIMENSION;j++) {
+            for(k=0;k<DIMENSION;k++) {
+                state.append(static_cast<char>(r[j][k]));
+            }
+        }
+    }
+
+    return state;
+}
+
+bool CRubik::setState(const QByteArray& state) {
+    // Axe géométrique (0 = x, 1 = y, 2 = z) de la normale associée à chaque EDirection, et inversement
+    static const int directionToAxe[DIMENSION] = { 0, 2, 1 };
+    static const CMouvement::EDirection axeToDirection[DIMENSION] = { CMouvement::cmedX, CMouvement::cmedZ, CMouvement::cmedY };
+    bool positions[NBCUBE] = { false };
+    int i, j, k, l;
+
+    if(state.size() != STATESIZE) {
+        return false;
+    }
+
+    // Validation complète avant toute modification du cube
+    for(i=0;i<NBCUBE;i++) {
+        const signed char *data = reinterpret_cast<const signed char *>(state.constData()) + i * (DIMENSION + DIMENSION * DIMENSION);
+        int r[DIMENSION][DIMENSION];
+        int idPosition = 0;
+
+        for(j=0;j<DIMENSION + DIMENSION * DIMENSION;j++) {
+            if(data[j] < -1 || data[j] > 1) {
+                return false;
+            }
+        }
+
+        for(j=0;j<DIMENSION;j++) {
+            idPosition = idPosition * RUBIKSIZE + data[j] + MARGIN;
+        }
+
+        if(positions[idPosition]) {
+            return false;
+        }
+        positions[idPosition] = true;
+
+        for(j=0;j<DIMENSION;j++) {
+            for(k=0;k<DIMENSION;k++) {
+                r[j][k] = data[DIMENSION + j * DIMENSION + k];
+            }
+        }
+
+        // Chaque colonne doit être un vecteur unitaire d'axe...
+        for(k=0;k<DIMENSION;k++) {
+            int nb = 0;
+
+            for(j=0;j<DIMENSION;j++) {
+                nb += abs(r[j][k]);
+            }
+
+            if(nb != 1) {
+                return false;
+            }
+        }
+
+        // ... et la matrice une rotation (pas une symétrie)
+        int det = r[0][0] * (r[1][1] * r[2][2] - r[1][2] * r[2][1])
+                - r[0][1] * (r[1][0] * r[2][2] - r[1][2] * r[2][0])
+                + r[0][2] * (r[1][0] * r[2][1] - r[1][1] * r[2][0]);
+
+        if(det != 1) {
+            return false;
+        }
+    }
+
+    for(i=0;i<NBCUBE;i++) {
+        SCube *cube = &cubes[i];
+        const signed char *data = reinterpret_cast<const signed char *>(state.constData()) + i * (DIMENSION + DIMENSION * DIMENSION);
+        const signed char *r = data + DIMENSION;
+        float coords[NBFACE][NBSOMMET][DIMENSION];
+
+        cube->xc = data[0];
+        cube->yc = data[1];
+        cube->zc = data[2];
+
+        calculCoords(static_cast<float>(cube->xo), static_cast<float>(cube->yo), static_cast<float>(cube->zo), coords);
+
+        for(j=0;j<NBFACE;j++) {
+            SFace *face = &cube->faces[j];
+            int axe = directionToAxe[face->origineOrientation];
+
+            for(k=0;k<NBSOMMET;k++) {
+                for(l=0;l<DIMENSION;l++) {
+                    face->coords[k][l] = r[l * DIMENSION] * coords[j][k][0] + r[l * DIMENSION + 1] * coords[j][k][1] + r[l * DIMENSION + 2] * coords[j][k][2];
+                }
+            }
+
+            for(l=0;l<DIMENSION;l++) {
+                if(r[l * DIMENSION + axe] != 0) {
+                    face->orientation = axeToDirection[l];
+                }
+            }
+        }
+    }
+
+    calculGroupes();
+
+    emit(update());
+    emit(endRotate());
+
+    return true;
+}
+
+void CRubik::setDisplay(bool display) {
+    blockSignals(!display);
+
+    if(display) {
+        emit(update());
+        emit(endRotate());
+    }
+}
+
+void CRubik::calculCoords(float fX, float fY, float fZ, float coords[NBFACE][NBSOMMET][DIMENSION]) {
+    const float c[NBFACE][NBSOMMET][DIMENSION] = {
+        { { fX-UNIT, fY-UNIT, fZ-UNIT }, { fX-UNIT, fY-UNIT, fZ+UNIT }, { fX-UNIT, fY+UNIT, fZ+UNIT }, { fX-UNIT, fY+UNIT, fZ-UNIT } }, //gauche
+        { { fX+UNIT, fY-UNIT, fZ+UNIT }, { fX+UNIT, fY-UNIT, fZ-UNIT }, { fX+UNIT, fY+UNIT, fZ-UNIT }, { fX+UNIT, fY+UNIT, fZ+UNIT } }, //droite
+        { { fX+UNIT, fY-UNIT, fZ-UNIT }, { fX-UNIT, fY-UNIT, fZ-UNIT }, { fX-UNIT, fY+UNIT, fZ-UNIT }, { fX+UNIT, fY+UNIT, fZ-UNIT } }, //derrière
+        { { fX-UNIT, fY-UNIT, fZ+UNIT }, { fX+UNIT, fY-UNIT, fZ+UNIT }, { fX+UNIT, fY+UNIT, fZ+UNIT }, { fX-UNIT, fY+UNIT, fZ+UNIT } }, //devant
+        { { fX-UNIT, fY-UNIT, fZ-UNIT }, { fX+UNIT, fY-UNIT, fZ-UNIT }, { fX+UNIT, fY-UNIT, fZ+UNIT }, { fX-UNIT, fY-UNIT, fZ+UNIT } }, //bas
+        { { fX-UNIT, fY+UNIT, fZ+UNIT }, { fX+UNIT, fY+UNIT, fZ+UNIT }, { fX+UNIT, fY+UNIT, fZ-UNIT }, { fX-UNIT, fY+UNIT, fZ-UNIT } }  //haut
+    };
+
+    memcpy(coords, c, sizeof(c));
+}
+
+void CRubik::getRotation(const SCube *cube, int r[DIMENSION][DIMENSION]) {
+    // Faces dont la normale d'origine est +x, +y et +z : leur normale actuelle donne les colonnes de la rotation
+    static const int idFaces[DIMENSION] = { 1, 5, 3 };
+    const int centre[DIMENSION] = { cube->xc, cube->yc, cube->zc };
+    int j, k, l;
+
+    for(k=0;k<DIMENSION;k++) {
+        const SFace *face = &cube->faces[idFaces[k]];
+
+        for(j=0;j<DIMENSION;j++) {
+            float sum = 0.0f;
+
+            for(l=0;l<NBSOMMET;l++) {
+                sum += face->coords[l][j];
+            }
+
+            // Centre de la face - centre du cube = normale * UNIT ; l'arrondi absorbe la dérive des cos/sin
+            r[j][k] = static_cast<int>(lroundf((sum / NBSOMMET - centre[j]) / UNIT));
+        }
+    }
+}
+
 void CRubik::calculGroupes(void) {
     int i;
     SCube **groupex;
     SCube **groupey;
     SCube **groupez;
 
-    memset(rGroupes, 0, sizeof(SCube *) * NBFACE * NBCUBEPARFACE);
+    memset(rGroupes, 0, sizeof(rGroupes));
+    memset(positions, 0, sizeof(positions));
 
     for(i=0;i<NBCUBE;i++) {
         int x = cubes[i].xc + MARGIN;
@@ -271,10 +445,18 @@ void CRubik::calculGroupes(void) {
         groupex[z * RUBIKSIZE + y] = &cubes[i];
         groupey[z * RUBIKSIZE + x] = &cubes[i];
         groupez[y * RUBIKSIZE + x] = &cubes[i];
+
+        positions[(z * RUBIKSIZE + y) * RUBIKSIZE + x] = &cubes[i];
     }
 }
 
 void CRubik::rotate(int idRotateGroupe, CMouvement::EDirection rotateSens, bool inverse, int stepCount, unsigned int ts) {
+    // Affichage coupé : animer ne servirait qu'à attendre
+    if(signalsBlocked()) {
+        stepCount = 1;
+        ts = 0;
+    }
+
     int step;
     int coef = (inverse ? -1 : 1);
     double angle = static_cast<double>(90/stepCount) * coef;
@@ -308,6 +490,9 @@ void CRubik::rotate(int idRotateGroupe, CMouvement::EDirection rotateSens, bool 
                         cube->yc = static_cast<int>(xc * coef);
                         break;
                     }
+
+                    // Les cubes du groupe permutent entre eux : la table reste cohérente une fois le groupe parcouru
+                    positions[((cube->zc + MARGIN) * RUBIKSIZE + cube->yc + MARGIN) * RUBIKSIZE + cube->xc + MARGIN] = cube;
                 }
 
                 for(j=0;j<NBFACE;j++) {
@@ -375,15 +560,11 @@ void CRubik::rotate(int idRotateGroupe, CMouvement::EDirection rotateSens, bool 
 }
 
 CRubik::SCube * CRubik::findCube(int x, int y, int z) const {
-    int i;
-
-    for(i=0;i<NBCUBE;i++) {
-        if(cubes[i].xc == x - MARGIN && cubes[i].yc == y - MARGIN && cubes[i].zc == z - MARGIN) {
-            return const_cast<CRubik::SCube *>(&cubes[i]);
-        }
+    if(x < 0 || x >= RUBIKSIZE || y < 0 || y >= RUBIKSIZE || z < 0 || z >= RUBIKSIZE) {
+        return nullptr;
     }
 
-    return nullptr;
+    return positions[(z * RUBIKSIZE + y) * RUBIKSIZE + x];
 }
 
 

@@ -79,7 +79,7 @@ void C3dView::setRubik(CRubik *rubik) {
 }
 //-----------------------------------------------------------------------------------------------
 void C3dView::wheelEvent(QWheelEvent * event) {
-    event->delta() > 0 ? scale += scale*0.1f : scale -= scale*0.1f;
+    event->angleDelta().y() > 0 ? scale += scale*0.1f : scale -= scale*0.1f;
     updateGL();
 }
 //-----------------------------------------------------------------------------------------------

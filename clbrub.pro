@@ -10,8 +10,8 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = clbrub
 TEMPLATE = app
-CONFIG += link_pkgconfig
-PKGCONFIG += python3
+CONFIG += link_pkgconfig configA
+PKGCONFIG += python3-embed
 
 configA {
     LIBS += -lqscintilla2_qt5

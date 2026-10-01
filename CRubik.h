@@ -14,6 +14,8 @@
 #define UNIT                        0.5f
 #define NBROTATEGROUPE              (NBFACE + (RUBIKSIZE - 2) * DIMENSION)
 #define ROTATE_STEP                 5
+// Pour chaque cube : position (x, y, z) puis matrice de rotation 3x3 (ligne par ligne), valeurs dans [-1, 1]
+#define STATESIZE                   (NBCUBE * (DIMENSION + DIMENSION * DIMENSION))
 
 class CRubik : public QObject {
     Q_OBJECT
@@ -31,12 +33,15 @@ public:
     CRubik(void);
 
     const CRubik::SFace& getSubFace(int idCube, int idFace) const;
-    QString melange(int nb = 50, bool anim = true);
+    QString melange(int nb = 50, bool anim = true, bool slices = true);
     void init(void);
-    QString exec(QString cmd);
+    QString exec(QString cmd, bool anim = true);
     void printCubeInfo(int x, int y, int z) const;
     CRubik::EFace getFace(int x, int y, int z, CMouvement::EDirection direction) const;
     bool win(void);
+    QByteArray getState(void) const;
+    bool setState(const QByteArray& state);
+    void setDisplay(bool display);
     static QColor fromEFace(CRubik::EFace colorFace);
 private:
     typedef struct _SCube {
@@ -73,10 +78,13 @@ private:
 
     SCube cubes[NBCUBE];
     SCube *rGroupes[NBROTATEGROUPE][NBCUBEPARFACE];
+    SCube *positions[NBCUBE];
 
     void calculGroupes(void);
     void rotate(int idRotateGroupe, CMouvement::EDirection rotateSens, bool inverse, int stepCount = ROTATE_STEP, unsigned int ts = 40);
     SCube * findCube(int x, int y, int z) const;
+    static void calculCoords(float fX, float fY, float fZ, float coords[NBFACE][NBSOMMET][DIMENSION]);
+    static void getRotation(const SCube *cube, int r[DIMENSION][DIMENSION]);
 signals:
     void update(void);
     void endRotate(void);

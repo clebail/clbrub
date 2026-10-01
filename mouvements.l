@@ -29,6 +29,8 @@ MOUV			[UDRLFBMES]
 			}
 "'"			{	return token::PRIME;
 			}
+[ \t\r\n]+	{	/* séparateurs ignorés */
+			}
 .			{ 	std::cout << "Unkown lexem " <<  yytext;
 			}
 %%

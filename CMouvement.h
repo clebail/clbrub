@@ -6,6 +6,7 @@
 #define RUBIKSIZE                   3
 
 #include <QString>
+#include <QStringList>
 
 class CMouvement {
 public:
@@ -14,12 +15,15 @@ public:
     CMouvement();
     CMouvement(QChar type);
     operator QString(void) const;
-    static CMouvement *createMouvement(void);
+    static CMouvement *createMouvement(bool slices = true);
     inline int getGroupe(void) const { return groupe; }
     inline CMouvement::EDirection getSens(void) const { return sens; }
     inline bool getInverse(void) const { return inverse; }
     inline void setInverse(bool inverse) { this->inverse = inverse; }
-    static QList<CMouvement *> formString(QString str);
+    static QList<CMouvement *> formString(QString str, bool *ok = nullptr);
+    static QString toString(const QList<CMouvement *>& mouvements);
+    static QString inverseSequence(QString str, bool *ok = nullptr);
+    static QStringList liste(bool slices = true);
 private:
     int groupe;
     CMouvement::EDirection sens;

@@ -32,20 +32,65 @@ CMouvement::operator QString(void) const {
     return result;
 }
 
-QList<CMouvement *> CMouvement::formString(QString str) {
+QList<CMouvement *> CMouvement::formString(QString str, bool *ok) {
     std::istringstream iss(str.toStdString());
     CScanner scanner(&iss);
     yy::CParser parser(scanner);
 
     clearResult();
 
-    parser.parse();
+    int erreur = parser.parse();
+
+    if(ok != nullptr) {
+        *ok = (erreur == 0);
+    }
+
     return getResult();
 }
 
-CMouvement *CMouvement::createMouvement(void) {
+QString CMouvement::toString(const QList<CMouvement *>& mouvements) {
+    QStringList result;
+
+    for(const CMouvement *mouvement : mouvements) {
+        result << *mouvement;
+    }
+
+    return result.join(' ');
+}
+
+QString CMouvement::inverseSequence(QString str, bool *ok) {
+    QList<CMouvement *> mouvements = formString(str, ok);
+    QList<CMouvement *> inverses;
+    QString result;
+
+    // Inverse d'une séquence : coups pris dans l'ordre inverse, chacun inversé
+    for(int i=mouvements.size()-1;i>=0;i--) {
+        mouvements.at(i)->setInverse(!mouvements.at(i)->getInverse());
+        inverses << mouvements.at(i);
+    }
+
+    result = toString(inverses);
+    qDeleteAll(mouvements);
+
+    return result;
+}
+
+QStringList CMouvement::liste(bool slices) {
+    // Même ordre que les labels de genTrain.py : faces puis tranches, chaque coup suivi de son inverse
+    const QString types = (slices ? "UDRLFBMES" : "UDRLFB");
+    QStringList result;
+
+    for(const QChar& type : types) {
+        result << QString(type) << QString(type) + "'";
+    }
+
+    return result;
+}
+
+CMouvement *CMouvement::createMouvement(bool slices) {
     int sens = rand() % DIMENSION;
-    int face = rand() % RUBIKSIZE;
+    // Sans tranche, seules la première et la dernière couche de chaque axe sont tournées
+    int face = (slices ? rand() % RUBIKSIZE : (rand() % 2) * (RUBIKSIZE - 1));
     CMouvement *mouvement = new CMouvement();
 
     mouvement->groupe = face + sens * RUBIKSIZE;
