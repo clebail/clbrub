@@ -4,21 +4,26 @@
 #
 #-------------------------------------------------
 
-QT       += core gui opengl concurrent
-
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+QT       += core gui widgets opengl openglwidgets concurrent
 
 TARGET = clbrub
 TEMPLATE = app
 CONFIG += link_pkgconfig configA
 PKGCONFIG += python3-embed
 
+# QScintilla Homebrew : en-têtes et bibliothèque sous le préfixe brew, hors des chemins par défaut du compilateur
+macx {
+    BREW_PREFIX = $$system(brew --prefix)
+    INCLUDEPATH += $$BREW_PREFIX/include
+    LIBS += -L$$BREW_PREFIX/lib
+}
+
 configA {
-    LIBS += -lqscintilla2_qt5
+    LIBS += -lqscintilla2_qt6
 }
 
 configB {
-    LIBS += -lqt5qscintilla2
+    LIBS += -lqt6qscintilla2
 }
 
 # The following define makes your compiler emit warnings if you use
@@ -32,7 +37,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
-CONFIG += c++11 debug
+CONFIG += c++17 debug
 
 FLEXSOURCES = mouvements.l
 BISONSOURCES = mouvements.y
@@ -45,7 +50,12 @@ flex.depends = mouvements.y.hpp
 flex.name = flex
 QMAKE_EXTRA_COMPILERS += flex
 
-bison.commands = bison -o ${QMAKE_FILE_OUT} -d ${QMAKE_FILE_IN}
+# bison >= 3 requis ; celui de macOS (2.3) est trop ancien, celui de Homebrew est hors PATH (keg-only)
+isEmpty(BISON) {
+    BISON = bison
+    macx: exists($$BREW_PREFIX/opt/bison/bin/bison): BISON = $$BREW_PREFIX/opt/bison/bin/bison
+}
+bison.commands = $$BISON -o ${QMAKE_FILE_OUT} -d ${QMAKE_FILE_IN}
 bison.input = BISONSOURCES
 bison.output = mouvements.y.cpp
 bison.variable_out = SOURCES

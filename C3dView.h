@@ -2,12 +2,13 @@
 #ifndef C3DVIEW_H
 #define C3DVIEW_H
 //-----------------------------------------------------------------------------------------------
-#include <QGLWidget>
-#include <QOpenGLTexture>
+#include <QOpenGLWidget>
+#include <QOpenGLFunctions_2_1>
 #include <QTimer>
 #include "CRubik.h"
 //-----------------------------------------------------------------------------------------------
-class C3dView : public QGLWidget {
+// Pipeline fixe OpenGL 2.1 (glBegin, glFrustum...) : contexte de compatibilité par défaut de QOpenGLWidget
+class C3dView : public QOpenGLWidget, protected QOpenGLFunctions_2_1 {
     Q_OBJECT
 public:
     explicit C3dView(QWidget *parent = nullptr);

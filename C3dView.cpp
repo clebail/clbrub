@@ -4,7 +4,7 @@
 #include <QMouseEvent>
 #include "C3dView.h"
 //-----------------------------------------------------------------------------------------------
-C3dView::C3dView(QWidget *parent) : QGLWidget(parent) {
+C3dView::C3dView(QWidget *parent) : QOpenGLWidget(parent) {
     scale = 1.0;
     rotx = roty = rotz = 0.0;
     // Vue par défaut : U en haut, F devant à gauche, R devant à droite
@@ -25,7 +25,8 @@ C3dView::~C3dView(void) {
 }
 //-----------------------------------------------------------------------------------------------
 void C3dView::initializeGL() {
-    qglClearColor(Qt::black);
+    initializeOpenGLFunctions();
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glShadeModel(GL_FLAT);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
@@ -40,7 +41,7 @@ void C3dView::initializeGL() {
 }
 //-----------------------------------------------------------------------------------------------
 void C3dView::resizeGL(int width, int height) {
-    glViewport(0, 0, width, height);
+    // Le viewport est fixé par QOpenGLWidget (en pixels physiques)
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     GLdouble x = static_cast<GLdouble>(width / height);
@@ -74,23 +75,24 @@ void C3dView::paintGL() {
 void C3dView::setRubik(CRubik *rubik) {
     this->rubik = rubik;
     if(rubik != nullptr) {
-        connect(rubik, SIGNAL(update()), this, SLOT(updateGL()));
-        updateGL();
+        connect(rubik, SIGNAL(update()), this, SLOT(update()));
+        update();
     }
 }
 //-----------------------------------------------------------------------------------------------
 void C3dView::wheelEvent(QWheelEvent * event) {
     event->angleDelta().y() > 0 ? scale += scale*0.1f : scale -= scale*0.1f;
-    updateGL();
+    update();
 }
 //-----------------------------------------------------------------------------------------------
 void C3dView::mousePressEvent(QMouseEvent * event) {
-    lastPos = event->pos();
+    lastPos = event->position().toPoint();
 }
 //-----------------------------------------------------------------------------------------------
 void C3dView::mouseMoveEvent(QMouseEvent * event) {
-    int dx = event->x() - lastPos.x();
-    int dy = event->y() - lastPos.y();
+    QPoint pos = event->position().toPoint();
+    int dx = pos.x() - lastPos.x();
+    int dy = pos.y() - lastPos.y();
 
     if (event->buttons() & Qt::LeftButton) {
         rotx += 4 * dy;
@@ -100,9 +102,9 @@ void C3dView::mouseMoveEvent(QMouseEvent * event) {
         rotz += 4 * dx;
     }
 
-    updateGL();
+    update();
 
-    lastPos = event->pos();
+    lastPos = pos;
 }
 //-----------------------------------------------------------------------------------------------
 void C3dView::drawRubik(bool forceColor) {
@@ -116,7 +118,7 @@ void C3dView::drawRubik(bool forceColor) {
                         CRubik::SFace face = rubik->getSubFace(i, j);
 
                         if(forceColor && face.colorFace == CRubik::crefBlack) {
-                            qglColor(Qt::black);
+                            glColor3f(0.0f, 0.0f, 0.0f);
                         } else {
                             GLuint texture = textures[face.colorFace];
                             glEnable(GL_TEXTURE_2D);
@@ -149,7 +151,8 @@ void C3dView::drawRubik(bool forceColor) {
 //-----------------------------------------------------------------------------------------------
 void C3dView::loadTexture(QString textureName, GLuint *texture) {
     QImage im(textureName);
-    QImage tex = QGLWidget::convertToGLFormat(im);
+    // Équivalent de QGLWidget::convertToGLFormat : RGBA et origine en bas à gauche
+    QImage tex = im.convertToFormat(QImage::Format_RGBA8888).flipped(Qt::Vertical);
 
     glEnable(GL_TEXTURE_2D);
 
@@ -172,7 +175,7 @@ void C3dView::onTimerTimeout(void) {
     //roty=static_cast<float>((static_cast<int>(roty) + 5) % 360);
     //rotz=static_cast<float>((static_cast<int>(rotz) + 5) % 360);
 
-    updateGL();
+    update();
 }
 //-----------------------------------------------------------------------------------------------
 

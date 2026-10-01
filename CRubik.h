@@ -3,7 +3,7 @@
 
 #include <QColor>
 #include <QList>
-#include <QGLWidget>
+#include <QObject>
 #include "CMouvement.h"
 #include "CCubeCore.h"
 

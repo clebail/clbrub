@@ -13,10 +13,13 @@ public:
 private:
     CRubik *rubik;
     QsciLexerPython *lexerPY;
+    QString scriptPath;
 
     void runScript(QString script);
 private slots:
     void on_pbRun_clicked();
+    void on_pbSave_clicked();
+    void on_pbLoad_clicked();
     void onEnablePbRun(bool enable);
 signals:
     void enablePbRun(bool enable);
