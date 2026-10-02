@@ -1,5 +1,6 @@
 #include <Python.h>
 #include <QtConcurrent>
+#include <QtDebug>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QMessageBox>
@@ -45,8 +46,23 @@ void CMainWindow::runScript(QString script) {
     delete[] buffer;
 }
 
+void CMainWindow::runMelange(int nb) {
+    emit(enablePbRun(false));
+    qDebug().noquote() << "Mélange :" << rubik->melange(nb, true);
+    emit(enablePbRun(true));
+}
+
 void CMainWindow::on_pbRun_clicked() {
     (void)QtConcurrent::run(&CMainWindow::runScript, this, teScript->text());
+}
+
+void CMainWindow::on_pbMelange_clicked() {
+    // Hors du thread GUI : l'animation dort entre deux étapes
+    (void)QtConcurrent::run(&CMainWindow::runMelange, this, sbMelange->value());
+}
+
+void CMainWindow::on_pbInit_clicked() {
+    rubik->init();
 }
 
 void CMainWindow::on_pbSave_clicked() {
@@ -92,5 +108,9 @@ void CMainWindow::on_pbLoad_clicked() {
 }
 
 void CMainWindow::onEnablePbRun(bool enable) {
+     // Le cube n'est pas protégé contre les accès concurrents : une seule action à la fois
      pbRun->setEnabled(enable);
+     pbMelange->setEnabled(enable);
+     pbInit->setEnabled(enable);
+     sbMelange->setEnabled(enable);
 }

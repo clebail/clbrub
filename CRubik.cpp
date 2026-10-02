@@ -93,6 +93,9 @@ void CRubik::init(void) {
     stickers = CCubeCore::solved();
 
     calculGroupes();
+
+    emit(update());
+    emit(endRotate());
 }
 
 QString CRubik::exec(QString cmd, bool anim) {

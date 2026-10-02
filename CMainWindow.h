@@ -16,8 +16,11 @@ private:
     QString scriptPath;
 
     void runScript(QString script);
+    void runMelange(int nb);
 private slots:
     void on_pbRun_clicked();
+    void on_pbMelange_clicked();
+    void on_pbInit_clicked();
     void on_pbSave_clicked();
     void on_pbLoad_clicked();
     void onEnablePbRun(bool enable);

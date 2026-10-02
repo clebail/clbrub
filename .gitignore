@@ -11,3 +11,5 @@ build/
 *.so
 .qmake.stash
 clbrub
+clbrub.pro.user
+.qtc_clangd

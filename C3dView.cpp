@@ -152,7 +152,12 @@ void C3dView::drawRubik(bool forceColor) {
 void C3dView::loadTexture(QString textureName, GLuint *texture) {
     QImage im(textureName);
     // Équivalent de QGLWidget::convertToGLFormat : RGBA et origine en bas à gauche
+    // QImage::flipped n'existe qu'à partir de Qt 6.9 ; mirrored y est déprécié
+#if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
     QImage tex = im.convertToFormat(QImage::Format_RGBA8888).flipped(Qt::Vertical);
+#else
+    QImage tex = im.convertToFormat(QImage::Format_RGBA8888).mirrored(false, true);
+#endif
 
     glEnable(GL_TEXTURE_2D);
 
